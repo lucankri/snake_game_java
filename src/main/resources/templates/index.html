@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="content-type" content="no-cache, no-store, must-revalidate">
+    <title>Snake Game</title>
+    <link rel="stylesheet" href="../web/styles.css?v=<%= System.currentTimeMillis() %">
+</head>
+<body>
+    <div id="container">
+        <div id="score">Очки: 0</div>
+        <canvas id="gameCanvas" th:width="600" th:height="400"></canvas>
+    </div>
+    <script src="../web/script.js?v=<%= System.currentTimeMillis() %"></script>
+</body>
+</html>
