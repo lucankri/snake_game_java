@@ -5,12 +5,8 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
-@Component
-@Scope("prototype")
 public class SnakeGame {
     public enum Direction {
         UP, DOWN, LEFT, RIGHT, STOP
@@ -49,10 +45,15 @@ public class SnakeGame {
             Point other = (Point) obj;
             return x == other.x && y == other.y;
         }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(x, y);
+        }
     }
 
-    public static final int WIDTH = 30;
-    public static final int HEIGHT =20;
+    private static final int WIDTH = 30;
+    private static final int HEIGHT =20;
     private final List<Point> snake;
     private final List<Point> foods;
     private final Random random;
@@ -128,6 +129,13 @@ public class SnakeGame {
 
     public int getScore() {
         return score;
+    }
+
+    public Map<String, Integer> getSizeWidthAndHeight() {
+        Map<String, Integer> result = new HashMap<>();
+        result.put("width", WIDTH);
+        result.put("height", HEIGHT);
+        return result;
     }
 
     public Direction getDirection() {

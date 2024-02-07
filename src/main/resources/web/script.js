@@ -3,8 +3,36 @@ const canvas = document.getElementById("gameCanvas");
 const boardContext = canvas.getContext("2d");
 const gradientBoard = boardContext.createLinearGradient(0, 0, canvas.width, canvas.height);
 const colorSnake = "#fefefe";
-
+let id;
 document.addEventListener("DOMContentLoaded", function () {
+    let previousDirection;
+    let currentDirection = "STOP";
+    document.addEventListener("keydown", function(event) {
+        event.preventDefault();
+        switch(event.key) {
+            case "ArrowUp":
+                currentDirection = "UP";
+                break;
+            case "ArrowDown":
+                currentDirection = "DOWN";
+                break;
+            case "ArrowLeft":
+                currentDirection = "LEFT";
+                break;
+            case "ArrowRight":
+                currentDirection = "RIGHT";
+                break;
+        }
+        fetchBoardStart();
+    });
+
+    function fetchBoardStart() {
+        if (previousDirection === "STOP") {
+            setInterval(fetchBoard, 50);
+        }
+    }
+
+
     let boardWidth, boardHeight;
     let cellWidth, cellHeight;
     let snakeCoordinate;
@@ -20,25 +48,25 @@ document.addEventListener("DOMContentLoaded", function () {
         let eyeX1, eyeY1, eyeX2, eyeY2; // Координаты глаз
         let xPx = snakeCoordinate[0].x * cellWidth;
         let yPx = snakeCoordinate[0].y * cellHeight;
-        if (currentDirection === "UP" || currentDirection === "STOP") {
+        if (previousDirection === "UP" || previousDirection === "STOP") {
             radiusBR = radiusBL = 0;
             radiusTL = radiusTR = radius;
             eyeX1 = xPx + cellWidth / 4;
             eyeY1 = eyeY2 = yPx + cellHeight / 4;
             eyeX2 = xPx + 3 * cellWidth / 4;
-        } else if (currentDirection === "DOWN") {
+        } else if (previousDirection === "DOWN") {
             radiusTL = radiusTR = 0;
             radiusBR = radiusBL = radius;
             eyeX1 = xPx + cellWidth / 4;
             eyeY1 = eyeY2 = yPx + cellHeight / 4 * 3;
             eyeX2 = xPx + 3 * cellWidth / 4;
-        } else if (currentDirection === "LEFT") {
+        } else if (previousDirection === "LEFT") {
             radiusTR = radiusBR = 0;
             radiusTL = radiusBL = radius;
             eyeX1 = eyeX2 = xPx + cellWidth / 4;
             eyeY1 = yPx + cellHeight / 4 * 3;
             eyeY2 = yPx + cellHeight / 4;
-        } else if (currentDirection === "RIGHT") {
+        } else if (previousDirection === "RIGHT") {
             radiusTL = radiusBL = 0;
             radiusTR = radiusBR = radius;
             eyeX1 = eyeX2 = xPx + cellWidth / 4 * 3;
@@ -72,8 +100,18 @@ document.addEventListener("DOMContentLoaded", function () {
         drawFood();
     }
 
+    function initializationGame() {
+        fetch('/initialization')
+            .then(response => response.text())
+            .then(playerId => {
+                id = playerId
+                console.log("id" + id);
+            })
+            .catch(error => console.error("Error: " + error));
+    }
+
     function getSizeBoard() {
-        fetch("/board-size")
+        fetch("/board-size?playerId=" + id)
             .then(response => response.json())
             .then(size => {
                 boardWidth = size.width;
@@ -86,13 +124,15 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function fetchBoard() {
         Promise.all([
-            fetch("/snake-coordinates").then(response => response.json()),
-            fetch("/food-coordinates").then(response => response.json()),
-            fetch("/score").then(response => response.text())
+            fetch("/snake-coordinates?playerId=" + id).then(response => response.json()),
+            fetch("/food-coordinates?playerId=" + id).then(response => response.json()),
+            fetch("/score?playerId=" + id).then(response => response.text()),
+            fetch("/direction?playerId=" + id).then(response => response.text())
         ])
-            .then(([snakeData, foodData, score]) => {
+            .then(([snakeData, foodData, score, direction]) => {
                 snakeCoordinate = snakeData;
                 foodCoordinate = foodData;
+                previousDirection = direction;
                 updateScore(score);
                 drawBoard();
                 moveSnake(currentDirection);
@@ -100,9 +140,28 @@ document.addEventListener("DOMContentLoaded", function () {
             .catch(error => console.error("Error fetching board:", error));
     }
 
+    function moveSnake(direction) {
+        fetch('/move', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+                playerId: id,
+                direction: direction
+            })
+        }).then(response => {
+            if (!response.ok) {
+                console.error("Failed to move snake:", response.statusText);
+            }
+        }).catch(error => console.error("Error moving snake:", error));
+    }
+
+    initializationGame();
     getSizeBoard();
-    setInterval(fetchBoard, 100);
+    fetchBoard();
 });
+
 
 function updateScore(score) {
     scoreElement.textContent = "Очки: " + score;
@@ -149,31 +208,9 @@ function eyeRendering(eyeSize, eyeX1, eyeY1, eyeX2, eyeY2, color) {
     boardContext.fillRect(eyeX2, eyeY2, eyeSize, eyeSize); // Отрисовка глаза
 }
 
-function moveSnake(direction) {
-    fetch("/move?direction=" + direction, {
-        method: "POST"
-    }).then(response => {
-        if (!response.ok) {
-            console.error("Failed to move snake:", response.statusText);
-        }
+window.addEventListener('beforeunload', function (event) {
+    // Отправляем запрос на сервер о закрытии страницы
+    fetch("/close-page?playerId=" + id, {
+        method: 'DELETE'
     }).catch(error => console.error("Error moving snake:", error));
-}
-
-let currentDirection = "STOP";
-document.addEventListener("keydown", function(event) {
-    event.preventDefault();
-    switch(event.key) {
-        case "ArrowUp":
-            currentDirection = "UP";
-            break;
-        case "ArrowDown":
-            currentDirection = "DOWN";
-            break;
-        case "ArrowLeft":
-            currentDirection = "LEFT";
-            break;
-        case "ArrowRight":
-            currentDirection = "RIGHT";
-            break;
-    }
 });
