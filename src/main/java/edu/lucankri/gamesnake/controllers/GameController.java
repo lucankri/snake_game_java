@@ -9,12 +9,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentLinkedDeque;
 
 import edu.lucankri.gamesnake.game.SnakeGame;
 import edu.lucankri.gamesnake.game.SnakeGame.Point;
@@ -25,24 +23,30 @@ import javax.servlet.http.HttpServletResponse;
 @Controller
 public class GameController {
     @Autowired
-    SnakeGameService snakeGameService;
+    private SnakeGameService snakeGameService;
+    private int numberPage = 1;
 
     @GetMapping("/")
-    public String startIndex() {
+    public String startIndex(HttpServletResponse response,
+                             @CookieValue(value = "playerId", defaultValue = "null") String playerId) {
+        if (playerId.equals("null") || snakeGameService.getGames().get(playerId) == null) {
+            System.out.println("///cuk=" + playerId);
+            System.out.println("Инициализация!");
+            Cookie cookie = new Cookie("playerId", snakeGameService.initialization());
+            response.addCookie(cookie);
+        } else {
+            ++numberPage;
+        }
+        System.out.println("ppppppp");
         return "index";
     }
 
-    @GetMapping("/initialization")
-    @ResponseBody
-    public String initializeGame(HttpServletResponse response) {
-        return snakeGameService.initialization();
-    }
 
     @GetMapping("/snake-coordinates")
     @ResponseBody
     @Async
-    public CompletableFuture<String> getSnake(@RequestParam("playerId") String playerId) throws JsonProcessingException {
-        List<Point> snake = snakeGameService.getSnakeCoordinates(playerId);
+    public CompletableFuture<String> getSnake(@CookieValue(value = "playerId", defaultValue = "null") String playerId) throws JsonProcessingException {
+        ConcurrentLinkedDeque<Point> snake = snakeGameService.getSnakeCoordinates(playerId);
         ObjectMapper objectMapper = new ObjectMapper();
         return CompletableFuture.completedFuture(objectMapper.writeValueAsString(snake));
     }
@@ -50,8 +54,8 @@ public class GameController {
     @GetMapping("/food-coordinates")
     @ResponseBody
     @Async
-    public CompletableFuture<String> getFood(@RequestParam("playerId") String playerId) throws JsonProcessingException {
-        List<Point> foods = snakeGameService.getFoodCoordinates(playerId);
+    public CompletableFuture<String> getFood(@CookieValue(value = "playerId", defaultValue = "null") String playerId) throws JsonProcessingException {
+        ConcurrentLinkedDeque<Point> foods = snakeGameService.getFoodCoordinates(playerId);
         ObjectMapper objectMapper = new ObjectMapper();
         return CompletableFuture.completedFuture(objectMapper.writeValueAsString(foods));
     }
@@ -59,26 +63,26 @@ public class GameController {
     @GetMapping("/score")
     @ResponseBody
     @Async
-    public CompletableFuture<Integer> getScore(@RequestParam("playerId") String playerId) {
+    public CompletableFuture<Integer> getScore(@CookieValue(value = "playerId", defaultValue = "null") String playerId) {
         return CompletableFuture.completedFuture(snakeGameService.getScore(playerId));
     }
 
     @GetMapping("/direction")
     @ResponseBody
     @Async
-    public CompletableFuture<String> getDirection(@RequestParam("playerId") String playerId) {
+    public CompletableFuture<String> getDirection(@CookieValue(value = "playerId", defaultValue = "null") String playerId) {
         return CompletableFuture.completedFuture(snakeGameService.getDirection(playerId));
     }
 
     @GetMapping("/board-size")
     @ResponseBody
-    public Map<String, Integer> getBoardSize(@RequestParam("playerId") String playerId) {
+    public Map<String, Integer> getBoardSize(@CookieValue(value = "playerId", defaultValue = "null") String playerId) {
         return snakeGameService.getSizeBoard(playerId);
     }
 
     @PostMapping("/move")
     @Async
-    public CompletableFuture<ResponseEntity<String>> move(@RequestParam("playerId") String playerId,
+    public CompletableFuture<ResponseEntity<String>> move(@CookieValue(value = "playerId", defaultValue = "null") String playerId,
                                                @RequestParam("direction") String direction) {
         boolean success = snakeGameService.moveSnake(playerId,
                                     SnakeGame.Direction.valueOf(direction));
@@ -90,10 +94,20 @@ public class GameController {
         }
     }
 
+//    @GetMapping("/delete-cookie")
+//    @ResponseBody
+//    public void deleteCookie(HttpServletResponse response) {
+//
+//    }
+
     @DeleteMapping("/close-page")
     @ResponseBody
     @Async
-    public void closePage(@RequestParam("playerId") String playerId) {
-        snakeGameService.deleteSnakeGame(playerId);
+    public void closePage(@CookieValue(value = "playerId", defaultValue = "null") String playerId) {
+        if (numberPage == 1) {
+            snakeGameService.deleteSnakeGame(playerId);
+        } else {
+            --numberPage;
+        }
     }
 }

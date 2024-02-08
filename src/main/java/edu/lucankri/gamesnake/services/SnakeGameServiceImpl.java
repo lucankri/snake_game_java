@@ -1,15 +1,12 @@
 package edu.lucankri.gamesnake.services;
 
-import edu.lucankri.gamesnake.controllers.GameController;
 import edu.lucankri.gamesnake.game.SnakeGame;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentMap;
 
 @Service
@@ -23,6 +20,8 @@ public class SnakeGameServiceImpl implements SnakeGameService {
     public String initialization() {
         String id = playerService.generatePlayerId();
         getOrCreateGame(id);
+        System.out.println("Игрок зашел! " + id + " Их=" + games.size());
+        System.out.println(games);
         return id;
     }
 
@@ -32,12 +31,12 @@ public class SnakeGameServiceImpl implements SnakeGameService {
     }
 
     @Override
-    public List<SnakeGame.Point> getSnakeCoordinates(String playerId) {
+    public ConcurrentLinkedDeque<SnakeGame.Point> getSnakeCoordinates(String playerId) {
         return getOrCreateGame(playerId).getSnake();
     }
 
     @Override
-    public List<SnakeGame.Point> getFoodCoordinates(String playerId) {
+    public ConcurrentLinkedDeque<SnakeGame.Point> getFoodCoordinates(String playerId) {
         return getOrCreateGame(playerId).getFoods();
     }
 
@@ -48,7 +47,6 @@ public class SnakeGameServiceImpl implements SnakeGameService {
 
     @Override
     public Map<String, Integer> getSizeBoard(String playerId) {
-        System.out.println(games);
         return getOrCreateGame(playerId).getSizeWidthAndHeight();
     }
 
@@ -66,6 +64,11 @@ public class SnakeGameServiceImpl implements SnakeGameService {
             System.out.println("Игрок " + playerId + " не найден.");
         }
         System.out.println(games);
+    }
+
+    @Override
+    public ConcurrentMap<String, SnakeGame> getGames() {
+        return games;
     }
 
     private SnakeGame getOrCreateGame(String playerId) {

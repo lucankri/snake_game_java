@@ -3,7 +3,7 @@ const canvas = document.getElementById("gameCanvas");
 const boardContext = canvas.getContext("2d");
 const gradientBoard = boardContext.createLinearGradient(0, 0, canvas.width, canvas.height);
 const colorSnake = "#fefefe";
-let id;
+
 document.addEventListener("DOMContentLoaded", function () {
     let previousDirection;
     let currentDirection = "STOP";
@@ -100,18 +100,14 @@ document.addEventListener("DOMContentLoaded", function () {
         drawFood();
     }
 
-    function initializationGame() {
-        fetch('/initialization')
-            .then(response => response.text())
-            .then(playerId => {
-                id = playerId
-                console.log("id" + id);
-            })
-            .catch(error => console.error("Error: " + error));
-    }
+    // function initializationGame() {
+    //     fetch('/initialization')
+    //         .then()
+    //         .catch(error => console.error("Error: " + error));
+    // }
 
     function getSizeBoard() {
-        fetch("/board-size?playerId=" + id)
+        fetch("/board-size")
             .then(response => response.json())
             .then(size => {
                 boardWidth = size.width;
@@ -124,10 +120,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function fetchBoard() {
         Promise.all([
-            fetch("/snake-coordinates?playerId=" + id).then(response => response.json()),
-            fetch("/food-coordinates?playerId=" + id).then(response => response.json()),
-            fetch("/score?playerId=" + id).then(response => response.text()),
-            fetch("/direction?playerId=" + id).then(response => response.text())
+            fetch("/snake-coordinates").then(response => response.json()),
+            fetch("/food-coordinates").then(response => response.json()),
+            fetch("/score").then(response => response.text()),
+            fetch("/direction").then(response => response.text())
         ])
             .then(([snakeData, foodData, score, direction]) => {
                 snakeCoordinate = snakeData;
@@ -147,7 +143,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 'Content-Type': 'application/x-www-form-urlencoded',
             },
             body: new URLSearchParams({
-                playerId: id,
                 direction: direction
             })
         }).then(response => {
@@ -157,7 +152,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }).catch(error => console.error("Error moving snake:", error));
     }
 
-    initializationGame();
+    // initializationGame();
     getSizeBoard();
     fetchBoard();
 });
@@ -210,7 +205,7 @@ function eyeRendering(eyeSize, eyeX1, eyeY1, eyeX2, eyeY2, color) {
 
 window.addEventListener('beforeunload', function (event) {
     // Отправляем запрос на сервер о закрытии страницы
-    fetch("/close-page?playerId=" + id, {
+    fetch("/close-page", {
         method: 'DELETE'
     }).catch(error => console.error("Error moving snake:", error));
 });

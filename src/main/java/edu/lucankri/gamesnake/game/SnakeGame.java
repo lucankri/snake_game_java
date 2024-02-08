@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentLinkedDeque;
 
 public class SnakeGame {
     public enum Direction {
@@ -54,15 +55,15 @@ public class SnakeGame {
 
     private static final int WIDTH = 30;
     private static final int HEIGHT =20;
-    private final List<Point> snake;
-    private final List<Point> foods;
+    private final ConcurrentLinkedDeque<Point> snake;
+    private final ConcurrentLinkedDeque<Point> foods;
     private final Random random;
     private int score;
     private Direction direction;
 
     public SnakeGame() {
-        this.snake = new LinkedList<>();
-        this.foods = new LinkedList<>();
+        this.snake = new ConcurrentLinkedDeque<>();
+        this.foods = new ConcurrentLinkedDeque<>();
         this.random = new Random();
         this.score = 0;
         this.direction = Direction.STOP;
@@ -71,14 +72,14 @@ public class SnakeGame {
 
     private void initGame() {
         snake.clear();
-        snake.add(new Point(WIDTH / 2, HEIGHT / 2)); // Initial position of snake
+        snake.offerLast(new Point(WIDTH / 2, HEIGHT / 2)); // Initial position of snake
         placeFood();
     }
 
     private void placeFood() {
         int x = random.nextInt(WIDTH);
         int y = random.nextInt(HEIGHT);
-        foods.add(new Point(x, y));
+        foods.offerLast(new Point(x, y));
     }
 
     private boolean isOpposite(Direction direction) {
@@ -92,9 +93,9 @@ public class SnakeGame {
         if (direction != Direction.STOP) {
             Point head;
             if (isOpposite(direction)) {
-                head = snake.get(0).move(this.direction);
+                head = snake.peekFirst().move(this.direction);
             } else {
-                head = snake.get(0).move(direction);
+                head = snake.peekFirst().move(direction);
                 this.direction = direction;
             }
             if (head.x < 0 || head.x >= WIDTH || head.y < 0 || head.y >= HEIGHT) {
@@ -107,23 +108,23 @@ public class SnakeGame {
                 }
             }
 
-            snake.add(0, head);
+            snake.offerFirst(head);
             if (foods.contains(head)) {
-                foods.remove(head);
+                foods.removeFirstOccurrence(head);
                 ++score;
                 placeFood();
             } else {
-                snake.remove(snake.size() - 1);
+                snake.pollLast();
             }
         }
         return true;
     }
 
-    public List<Point> getSnake() {
+    public ConcurrentLinkedDeque<Point> getSnake() {
         return snake;
     }
 
-    public List<Point> getFoods() {
+    public ConcurrentLinkedDeque<Point> getFoods() {
         return foods;
     }
 
