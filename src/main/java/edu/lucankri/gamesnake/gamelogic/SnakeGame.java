@@ -1,16 +1,15 @@
 package edu.lucankri.gamesnake.game;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
+@Component
 public class SnakeGame {
     public enum Direction {
-        UP, DOWN, LEFT, RIGHT, STOP
+        UP, DOWN, LEFT, RIGHT, GAME_START
     }
 
     public static class Point {
@@ -53,33 +52,45 @@ public class SnakeGame {
         }
     }
 
-    private static final int WIDTH = 30;
-    private static final int HEIGHT =20;
+    private static final int WIDTH = 50;
+    private static final int HEIGHT = 30;
     private final ConcurrentLinkedDeque<Point> snake;
     private final ConcurrentLinkedDeque<Point> foods;
-    private final Random random;
+    private ConcurrentLinkedDeque<Point> freeCells;
     private int score;
     private Direction direction;
 
     public SnakeGame() {
         this.snake = new ConcurrentLinkedDeque<>();
         this.foods = new ConcurrentLinkedDeque<>();
-        this.random = new Random();
-        this.score = 0;
-        this.direction = Direction.STOP;
         initGame();
     }
 
-    private void initGame() {
+    public void initGame() {
+        this.score = 0;
+        this.direction = Direction.GAME_START;
         snake.clear();
-        snake.offerLast(new Point(WIDTH / 2, HEIGHT / 2)); // Initial position of snake
+        foods.clear();
+        snake.offerLast(new Point(WIDTH / 2, HEIGHT / 2));
         placeFood();
+        createFreeCells();
     }
 
     private void placeFood() {
-        int x = random.nextInt(WIDTH);
-        int y = random.nextInt(HEIGHT);
-        foods.offerLast(new Point(x, y));
+        foods.offerLast(freeCells.pollFirst());
+    }
+
+    private void createFreeCells() {
+        LinkedList<Point> list = new LinkedList<>();
+        for (int y = 0; y < HEIGHT; ++y) {
+            for (int x = 0; x < WIDTH; ++x) {
+                Point point = new Point(x, y);
+                if (!snake.contains(point))
+                    list.add(point);
+            }
+        }
+        Collections.shuffle(list);
+        freeCells = new ConcurrentLinkedDeque<>(list);
     }
 
     private boolean isOpposite(Direction direction) {
@@ -90,7 +101,10 @@ public class SnakeGame {
     }
 
     public boolean move(Direction direction) {
-        if (direction != Direction.STOP) {
+        if (direction != Direction.GAME_START) {
+            if (freeCells.isEmpty()) {
+                createFreeCells();
+            }
             Point head;
             if (isOpposite(direction)) {
                 head = snake.peekFirst().move(this.direction);
@@ -116,6 +130,7 @@ public class SnakeGame {
             } else {
                 snake.pollLast();
             }
+            freeCells.removeFirstOccurrence(head);
         }
         return true;
     }
