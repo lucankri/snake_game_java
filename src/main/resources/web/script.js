@@ -1,12 +1,26 @@
 const scoreElement = document.getElementById("score");
 const canvas = document.getElementById("gameCanvas");
+const buttonRestart = document.getElementById("restart");
 const boardContext = canvas.getContext("2d");
 const gradientBoard = boardContext.createLinearGradient(0, 0, canvas.width, canvas.height);
+const menu = document.getElementById("menu");
+
+
 const colorSnake = "#fefefe";
+const colorFoods = "greenyellow";
+
+
+let intervalId = null;
 
 document.addEventListener("DOMContentLoaded", function () {
     let previousDirection;
-    let currentDirection = "STOP";
+    let currentDirection;
+    let boardWidth = 30, boardHeight = 20, sizeFoods = 1;
+    let cellWidth, cellHeight;
+    let snakeCoordinate;
+    let foodCoordinate;
+    let lvl = 200;
+
     document.addEventListener("keydown", function(event) {
         event.preventDefault();
         switch(event.key) {
@@ -27,16 +41,77 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     function fetchBoardStart() {
-        if (previousDirection === "STOP") {
-            setInterval(fetchBoard, 50);
+        if (intervalId === null) {
+            intervalId = setInterval(fetchBoard, lvl);
+        }
+    }
+
+    function fetchBoardStop() {
+        if (intervalId !== null) {
+            clearInterval(intervalId);
+            intervalId = null;
         }
     }
 
 
-    let boardWidth, boardHeight;
-    let cellWidth, cellHeight;
-    let snakeCoordinate;
-    let foodCoordinate;
+    function initialization() {
+        return fetch(`/initialization?width=${boardWidth}&height=${boardHeight}&sizeFoods=${sizeFoods}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Ошибка HTTP: ${response.status}`);
+                }
+                cellWidth = canvas.width / boardWidth;
+                cellHeight = canvas.height / boardHeight;
+                previousDirection = "";
+                currentDirection = "GAME_START";
+        }).catch(error => console.error("Error ", error));
+    }
+
+    menu.addEventListener('click', function(event) {
+        event.preventDefault();
+
+        if (event.target.tagName === 'A') {
+            let linkText = event.target.href;
+
+            switch (linkText) {
+                case "Медленная":
+                    lvl = 200;
+                    break;
+                case "Средняя":
+                    lvl = 120;
+                    break;
+                case "Быстрая":
+                    lvl = 70;
+                    break;
+                case "Маленький":
+                    boardWidth = 15;
+                    boardHeight = 10;
+                    break;
+                case "Средний":
+                    boardWidth = 30;
+                    boardHeight = 20;
+                    break;
+                case "Большой":
+                    boardWidth = 60;
+                    boardHeight = 40;
+                    break;
+                case "1":
+                    sizeFoods = 1;
+                    break;
+                case "3":
+                    sizeFoods = 3;
+                    break;
+                case "6":
+                    sizeFoods = 6;
+                    break;
+            }
+            fetchBoardStop();
+            initialization().then(() => {
+                fetchBoard();
+                buttonRestart.style.visibility = "hidden";
+            });
+        }
+    }, false);
 
     gradientBoard.addColorStop(0, "#0d163f");
     gradientBoard.addColorStop(1, "#00020a");
@@ -48,7 +123,7 @@ document.addEventListener("DOMContentLoaded", function () {
         let eyeX1, eyeY1, eyeX2, eyeY2; // Координаты глаз
         let xPx = snakeCoordinate[0].x * cellWidth;
         let yPx = snakeCoordinate[0].y * cellHeight;
-        if (previousDirection === "UP" || previousDirection === "STOP") {
+        if (previousDirection === "UP" || previousDirection === "GAME_START") {
             radiusBR = radiusBL = 0;
             radiusTL = radiusTR = radius;
             eyeX1 = xPx + cellWidth / 4;
@@ -88,7 +163,7 @@ document.addEventListener("DOMContentLoaded", function () {
         for (let i = 0; i < foodCoordinate.length; ++i) {
             let xPx = foodCoordinate[i].x * cellWidth;
             let yPx = foodCoordinate[i].y * cellHeight;
-            drawRoundedSquare(xPx, yPx, cellWidth, cellHeight, radius, radius, radius, radius, "greenyellow");
+            drawRoundedSquare(xPx, yPx, cellWidth, cellHeight, radius, radius, radius, radius, colorFoods);
         }
     }
 
@@ -100,26 +175,8 @@ document.addEventListener("DOMContentLoaded", function () {
         drawFood();
     }
 
-    // function initializationGame() {
-    //     fetch('/initialization')
-    //         .then()
-    //         .catch(error => console.error("Error: " + error));
-    // }
-
-    function getSizeBoard() {
-        fetch("/board-size")
-            .then(response => response.json())
-            .then(size => {
-                boardWidth = size.width;
-                boardHeight = size.height;
-                cellWidth = canvas.width / boardWidth;
-                cellHeight = canvas.height / boardHeight;
-            })
-            .catch(error => console.error("Error fetching board size:", error));
-    }
-
     function fetchBoard() {
-        Promise.all([
+        return Promise.all([
             fetch("/snake-coordinates").then(response => response.json()),
             fetch("/food-coordinates").then(response => response.json()),
             fetch("/score").then(response => response.text()),
@@ -145,21 +202,45 @@ document.addEventListener("DOMContentLoaded", function () {
             body: new URLSearchParams({
                 direction: direction
             })
-        }).then(response => {
-            if (!response.ok) {
-                console.error("Failed to move snake:", response.statusText);
+        }).then(response => response.json())
+            .then (data => {
+            if (data === false) {
+                fetchBoardStop();
+                intervalId = "0";
+                buttonRestart.style.visibility = "visible";
             }
         }).catch(error => console.error("Error moving snake:", error));
     }
 
-    // initializationGame();
-    getSizeBoard();
-    fetchBoard();
-});
+    buttonRestart.addEventListener("click", function () {
+        // fetch("/restart")
+        //     .then()
+        //     .catch(error => console.error("Error: " + error));
+        buttonRestart.style.visibility = "hidden";
+        intervalId = null;
+        initialization().then(() => {
+            fetchBoard().then(() => {
+                checkingPageUpdate(previousDirection, intervalId);
+            });
+        });
+    });
 
+    initialization().then(() => {
+        fetchBoard().then(() => {
+            checkingPageUpdate(previousDirection, intervalId);
+        });
+    });
+});
 
 function updateScore(score) {
     scoreElement.textContent = "Очки: " + score;
+}
+
+function checkingPageUpdate(direction) {
+    if (direction !== "GAME_START") {
+        buttonRestart.style.visibility = "visible";
+        intervalId = "0";
+    }
 }
 
 function drawRoundedSquare(x, y, width, height, radiusTL, radiusTR, radiusBR, radiusBL, color) {
@@ -199,13 +280,6 @@ function drawRoundedSquare(x, y, width, height, radiusTL, radiusTR, radiusBR, ra
 
 function eyeRendering(eyeSize, eyeX1, eyeY1, eyeX2, eyeY2, color) {
     boardContext.fillStyle = color; // Цвет глаз
-    boardContext.fillRect(eyeX1, eyeY1, eyeSize, eyeSize); // Отрисовка глаза
-    boardContext.fillRect(eyeX2, eyeY2, eyeSize, eyeSize); // Отрисовка глаза
+    boardContext.fillRect(eyeX1, eyeY1, eyeSize, eyeSize); // Отрисовка глаз
+    boardContext.fillRect(eyeX2, eyeY2, eyeSize, eyeSize); // Отрисовка глаз
 }
-
-window.addEventListener('beforeunload', function (event) {
-    // Отправляем запрос на сервер о закрытии страницы
-    fetch("/close-page", {
-        method: 'DELETE'
-    }).catch(error => console.error("Error moving snake:", error));
-});

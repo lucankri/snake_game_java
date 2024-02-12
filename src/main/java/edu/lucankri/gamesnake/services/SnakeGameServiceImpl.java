@@ -1,77 +1,58 @@
 package edu.lucankri.gamesnake.services;
 
-import edu.lucankri.gamesnake.game.SnakeGame;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
+import edu.lucankri.gamesnake.gamelogic.SnakeGame;
+import org.springframework.stereotype.Component;
 
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
-import java.util.concurrent.ConcurrentMap;
 
-@Service
+@Component
 public class SnakeGameServiceImpl implements SnakeGameService {
-    @Autowired
-    private PlayerService playerService;
 
-    private final ConcurrentMap<String, SnakeGame> games = new ConcurrentHashMap<>();
+    private SnakeGame snakeGame;
 
     @Override
-    public String initialization() {
-        String id = playerService.generatePlayerId();
-        getOrCreateGame(id);
-        System.out.println("Игрок зашел! " + id + " Их=" + games.size());
-        System.out.println(games);
-        return id;
+    public void initialization(int width, int height, int sizeFoods) {
+        snakeGame = new SnakeGame(width, height, sizeFoods);
     }
 
     @Override
-    public boolean moveSnake(String playerId, SnakeGame.Direction direction) {
-        return getOrCreateGame(playerId).move(direction);
+    public boolean moveSnake(SnakeGame.Direction direction) {
+        return snakeGame.move(direction);
     }
 
     @Override
-    public ConcurrentLinkedDeque<SnakeGame.Point> getSnakeCoordinates(String playerId) {
-        return getOrCreateGame(playerId).getSnake();
+    public ConcurrentLinkedDeque<SnakeGame.Point> getSnakeCoordinates() {
+        return snakeGame.getSnake();
     }
 
     @Override
-    public ConcurrentLinkedDeque<SnakeGame.Point> getFoodCoordinates(String playerId) {
-        return getOrCreateGame(playerId).getFoods();
+    public ConcurrentLinkedDeque<SnakeGame.Point> getFoodCoordinates() {
+        return snakeGame.getFoods();
     }
 
     @Override
-    public int getScore(String playerId) {
-        return getOrCreateGame(playerId).getScore();
+    public int getScore() {
+        return snakeGame.getScore();
     }
 
     @Override
-    public Map<String, Integer> getSizeBoard(String playerId) {
-        return getOrCreateGame(playerId).getSizeWidthAndHeight();
+    public Map<String, Integer> getSizeBoard() {
+        return snakeGame.getSizeWidthAndHeight();
     }
 
     @Override
-    public String getDirection(String playerId) {
-        return getOrCreateGame(playerId).getDirection().toString();
+    public String getDirection() {
+        return snakeGame.getDirection().toString();
     }
 
     @Override
-    public void deleteSnakeGame(String playerId) {
-        SnakeGame removedGame = games.remove(playerId);
-        if (removedGame != null) {
-            System.out.println("Игрок ушел! " + playerId + " Их=" + games.size());
-        } else {
-            System.out.println("Игрок " + playerId + " не найден.");
-        }
-        System.out.println(games);
+    public void restart() {
+        snakeGame.initGame();
     }
 
     @Override
-    public ConcurrentMap<String, SnakeGame> getGames() {
-        return games;
-    }
-
-    private SnakeGame getOrCreateGame(String playerId) {
-        return games.computeIfAbsent(playerId, k -> new SnakeGame());
+    public void resize(int width, int height, int sizeFoods) {
+        snakeGame.resize(width, height, sizeFoods);
     }
 }

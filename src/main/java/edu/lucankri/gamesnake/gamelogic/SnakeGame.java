@@ -1,12 +1,10 @@
-package edu.lucankri.gamesnake.game;
+package edu.lucankri.gamesnake.gamelogic;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.springframework.stereotype.Component;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
-@Component
 public class SnakeGame {
     public enum Direction {
         UP, DOWN, LEFT, RIGHT, GAME_START
@@ -52,17 +50,28 @@ public class SnakeGame {
         }
     }
 
-    private static final int WIDTH = 50;
-    private static final int HEIGHT = 30;
+    private int width;
+    private int height;
+    private int sizeFoods;
     private final ConcurrentLinkedDeque<Point> snake;
     private final ConcurrentLinkedDeque<Point> foods;
     private ConcurrentLinkedDeque<Point> freeCells;
     private int score;
     private Direction direction;
 
-    public SnakeGame() {
+    public SnakeGame(int width, int height, int sizeFoods) {
+        this.width = width;
+        this.height = height;
+        this.sizeFoods = sizeFoods;
         this.snake = new ConcurrentLinkedDeque<>();
         this.foods = new ConcurrentLinkedDeque<>();
+        initGame();
+    }
+
+    public void resize(int width, int height, int sizeFoods) {
+        this.width = width;
+        this.height = height;
+        this.sizeFoods = sizeFoods;
         initGame();
     }
 
@@ -71,19 +80,21 @@ public class SnakeGame {
         this.direction = Direction.GAME_START;
         snake.clear();
         foods.clear();
-        snake.offerLast(new Point(WIDTH / 2, HEIGHT / 2));
-        placeFood();
+        snake.offerLast(new Point(width / 2, height / 2));
         createFreeCells();
+        placeFood();
     }
 
     private void placeFood() {
-        foods.offerLast(freeCells.pollFirst());
+        for (int i = 0; i < sizeFoods; ++i) {
+            foods.offerLast(freeCells.pollFirst());
+        }
     }
 
     private void createFreeCells() {
         LinkedList<Point> list = new LinkedList<>();
-        for (int y = 0; y < HEIGHT; ++y) {
-            for (int x = 0; x < WIDTH; ++x) {
+        for (int y = 0; y < height; ++y) {
+            for (int x = 0; x < width; ++x) {
                 Point point = new Point(x, y);
                 if (!snake.contains(point))
                     list.add(point);
@@ -112,7 +123,7 @@ public class SnakeGame {
                 head = snake.peekFirst().move(direction);
                 this.direction = direction;
             }
-            if (head.x < 0 || head.x >= WIDTH || head.y < 0 || head.y >= HEIGHT) {
+            if (head.x < 0 || head.x >= width || head.y < 0 || head.y >= height) {
                 return false; // Game over: Out of bounds
             }
 
@@ -126,7 +137,7 @@ public class SnakeGame {
             if (foods.contains(head)) {
                 foods.removeFirstOccurrence(head);
                 ++score;
-                placeFood();
+                foods.offerLast(freeCells.pollFirst());
             } else {
                 snake.pollLast();
             }
@@ -149,8 +160,8 @@ public class SnakeGame {
 
     public Map<String, Integer> getSizeWidthAndHeight() {
         Map<String, Integer> result = new HashMap<>();
-        result.put("width", WIDTH);
-        result.put("height", HEIGHT);
+        result.put("width", width);
+        result.put("height", height);
         return result;
     }
 
