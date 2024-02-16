@@ -4,8 +4,12 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.lucankri.gamesnake.services.SnakeGameService;
 import edu.lucankri.gamesnake.services.SnakeGameServiceImpl;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
@@ -26,6 +30,23 @@ public class GameController {
         return "index";
     }
 
+    @PostMapping("/game-move-data")
+    public ResponseEntity<Map<String, Object>> getGameMoveData(HttpServletRequest request,
+                                                           @RequestParam("direction") String direction) {
+        Map<String, Object> gameData = new HashMap<>();
+        SnakeGameService snakeGameService = (SnakeGameService) request.getSession().getAttribute("player");
+        if (snakeGameService != null) {
+            gameData.put("move", snakeGameService.moveSnake(direction));
+            gameData.put("snakeCoordinates", snakeGameService.getSnakeCoordinates());
+            gameData.put("foodCoordinates", snakeGameService.getFoodCoordinates());
+            gameData.put("score", snakeGameService.getScore());
+            gameData.put("direction", snakeGameService.getDirection());
+            return ResponseEntity.ok(gameData);
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Collections.singletonMap("error", "Игровая сессия не найдена."));
+        }
+    }
+
     @GetMapping("/initialization")
     @ResponseBody
     public void init(HttpServletRequest request,
@@ -35,69 +56,12 @@ public class GameController {
         HttpSession session = request.getSession();
         SnakeGameService snakeGameService = (SnakeGameService) session.getAttribute("player");
         if (snakeGameService == null) {
-            System.out.println("Новая сессия!!!");
             SnakeGameService service = new SnakeGameServiceImpl();
             service.initialization(width, height, sizeFoods);
             session.setAttribute("player", service);
         } else {
             snakeGameService.resize(width, height, sizeFoods);
-            System.out.println("Сессия уже существует!");
         }
     }
 
-    @GetMapping("/restart")
-    @ResponseBody
-    public void restart(HttpServletRequest request) {
-        HttpSession session = request.getSession();
-        SnakeGameService snakeGameService = (SnakeGameService) session.getAttribute("player");
-        snakeGameService.restart();
-    }
-
-
-    @GetMapping(path = "/snake-coordinates")
-    @ResponseBody
-    public String getSnake(HttpServletRequest request) throws JsonProcessingException {
-        SnakeGameService gameSession = (SnakeGameService) request.getSession().getAttribute("player");
-        ConcurrentLinkedDeque<Point> snake = gameSession.getSnakeCoordinates();
-        ObjectMapper objectMapper = new ObjectMapper();
-        return objectMapper.writeValueAsString(snake);
-    }
-
-    @GetMapping("/food-coordinates")
-    @ResponseBody
-    public String getFood(HttpServletRequest request) throws JsonProcessingException {
-        SnakeGameService gameSession = (SnakeGameService) request.getSession().getAttribute("player");
-        ConcurrentLinkedDeque<Point> foods = gameSession.getFoodCoordinates();
-        ObjectMapper objectMapper = new ObjectMapper();
-        return objectMapper.writeValueAsString(foods);
-    }
-
-    @GetMapping("/score")
-    @ResponseBody
-    public Integer getScore(HttpServletRequest request) {
-        SnakeGameService gameSession = (SnakeGameService) request.getSession().getAttribute("player");
-        return gameSession.getScore();
-    }
-
-    @GetMapping("/direction")
-    @ResponseBody
-    public String getDirection(HttpServletRequest request) {
-        SnakeGameService gameSession = (SnakeGameService) request.getSession().getAttribute("player");
-        return gameSession.getDirection();
-    }
-
-    @GetMapping("/board-size")
-    @ResponseBody
-    public Map<String, Integer> getBoardSize(HttpServletRequest request) {
-        SnakeGameService gameSession = (SnakeGameService) request.getSession().getAttribute("player");
-        return gameSession.getSizeBoard();
-    }
-
-    @PostMapping("/move")
-    @ResponseBody
-    public boolean move(HttpServletRequest request,
-                                       @RequestParam("direction") String direction) {
-        SnakeGameService gameSession = (SnakeGameService) request.getSession().getAttribute("player");
-        return gameSession.moveSnake(SnakeGame.Direction.valueOf(direction));
-    }
 }

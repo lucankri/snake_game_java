@@ -126,14 +126,17 @@ public class SnakeGame {
             if (head.x < 0 || head.x >= width || head.y < 0 || head.y >= height) {
                 return false; // Game over: Out of bounds
             }
-
-            for (Point part : snake) {
-                if (part.equals(head)) {
-                    return false; // Game over: Collision with snake
-                }
+            if (snake.contains(head)) {
+                return false; // Game over: Collision with snake
             }
+//            for (Point part : snake) {
+//                if (part.equals(head)) {
+//                    return false; // Game over: Collision with snake
+//                }
+//            }
 
             snake.offerFirst(head);
+            freeCells.removeFirstOccurrence(head);
             if (foods.contains(head)) {
                 foods.removeFirstOccurrence(head);
                 ++score;
@@ -141,7 +144,6 @@ public class SnakeGame {
             } else {
                 snake.pollLast();
             }
-            freeCells.removeFirstOccurrence(head);
         }
         return true;
     }

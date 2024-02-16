@@ -5,32 +5,33 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="content-type" content="no-cache, no-store, must-revalidate">
     <title>Snake Game</title>
-    <link rel="stylesheet" href="../web/styles.css">
+    <link rel="icon" href="../web/images/snake2.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="../web/styles.css?v=<%= System.currentTimeMillis() %">
 <!--    ?v=<%= System.currentTimeMillis() %-->
 </head>
 <body>
-    <div id="container">
+    <div id="containerGame">
         <nav class="dws_menu">
             <ul id="menu">
-                <li><a href="#">Скорость</a>
+                <li><a>Скорость</a>
                     <ul>
                         <li><a href="/lvl-slow">Медленная</a></li>
                         <li><a href="/lvl-average">Средняя</a></li>
                         <li><a href="/lvl-fast">Быстрая</a></li>
                     </ul>
                 </li>
-                <li><a href="#">Размер</a>
+                <li><a>Размер</a>
                     <ul>
                         <li><a href="/board-little">Маленький</a></li>
                         <li><a href="/board-average">Средний</a></li>
                         <li><a href="/board-big">Большой</a></li>
                     </ul>
                 </li>
-                <li><a href="#">Еда</a>
+                <li><a>Еда</a>
                     <ul>
-                        <li><a href="#">1</a></li>
-                        <li><a href="#">3</a></li>
-                        <li><a href="#">6</a></li>
+                        <li><a href="/foods-1">1</a></li>
+                        <li><a href="/foods-3">3</a></li>
+                        <li><a href="/foods-6">6</a></li>
                     </ul>
                 </li>
             </ul>

@@ -1,12 +1,10 @@
 package edu.lucankri.gamesnake.services;
 
 import edu.lucankri.gamesnake.gamelogic.SnakeGame;
-import org.springframework.stereotype.Component;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
-@Component
 public class SnakeGameServiceImpl implements SnakeGameService {
 
     private SnakeGame snakeGame;
@@ -17,8 +15,8 @@ public class SnakeGameServiceImpl implements SnakeGameService {
     }
 
     @Override
-    public boolean moveSnake(SnakeGame.Direction direction) {
-        return snakeGame.move(direction);
+    public boolean moveSnake(String direction) {
+        return snakeGame.move(SnakeGame.Direction.valueOf(direction));
     }
 
     @Override
@@ -36,10 +34,6 @@ public class SnakeGameServiceImpl implements SnakeGameService {
         return snakeGame.getScore();
     }
 
-    @Override
-    public Map<String, Integer> getSizeBoard() {
-        return snakeGame.getSizeWidthAndHeight();
-    }
 
     @Override
     public String getDirection() {

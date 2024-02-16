@@ -64,44 +64,47 @@ document.addEventListener("DOMContentLoaded", function () {
                 cellHeight = canvas.height / boardHeight;
                 previousDirection = "";
                 currentDirection = "GAME_START";
-        }).catch(error => console.error("Error ", error));
+        }).catch(error => {
+                window.location.href = "/";
+                console.error("Error ", error)
+        });
     }
 
     menu.addEventListener('click', function(event) {
         event.preventDefault();
 
         if (event.target.tagName === 'A') {
-            let linkText = event.target.href;
+            let linkText = new URL(event.target.href).pathname;
 
             switch (linkText) {
-                case "Медленная":
+                case "/lvl-slow":
                     lvl = 200;
                     break;
-                case "Средняя":
+                case "/lvl-average":
                     lvl = 120;
                     break;
-                case "Быстрая":
+                case "/lvl-fast":
                     lvl = 70;
                     break;
-                case "Маленький":
+                case "/board-little":
                     boardWidth = 15;
                     boardHeight = 10;
                     break;
-                case "Средний":
+                case "/board-average":
                     boardWidth = 30;
                     boardHeight = 20;
                     break;
-                case "Большой":
+                case "/board-big":
                     boardWidth = 60;
                     boardHeight = 40;
                     break;
-                case "1":
+                case "/foods-1":
                     sizeFoods = 1;
                     break;
-                case "3":
+                case "/foods-3":
                     sizeFoods = 3;
                     break;
-                case "6":
+                case "/foods-6":
                     sizeFoods = 6;
                     break;
             }
@@ -176,46 +179,38 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function fetchBoard() {
-        return Promise.all([
-            fetch("/snake-coordinates").then(response => response.json()),
-            fetch("/food-coordinates").then(response => response.json()),
-            fetch("/score").then(response => response.text()),
-            fetch("/direction").then(response => response.text())
-        ])
-            .then(([snakeData, foodData, score, direction]) => {
-                snakeCoordinate = snakeData;
-                foodCoordinate = foodData;
-                previousDirection = direction;
-                updateScore(score);
-                drawBoard();
-                moveSnake(currentDirection);
-            })
-            .catch(error => console.error("Error fetching board:", error));
-    }
-
-    function moveSnake(direction) {
-        fetch('/move', {
+        return fetch('/game-move-data', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
             body: new URLSearchParams({
-                direction: direction
+                direction: currentDirection
             })
-        }).then(response => response.json())
-            .then (data => {
-            if (data === false) {
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("Ошибка при получении данных игры");
+            }
+            return response.json();
+        })
+        .then(data => {
+            snakeCoordinate = data.snakeCoordinates;
+            foodCoordinate = data.foodCoordinates;
+            previousDirection = data.direction;
+            if (data.move === false) {
                 fetchBoardStop();
                 intervalId = "0";
                 buttonRestart.style.visibility = "visible";
             }
-        }).catch(error => console.error("Error moving snake:", error));
+            updateScore(data.score);
+            drawBoard();
+        })
+        .catch(error => {
+            fetchBoardStop();
+            initialization();
+        });
     }
 
+
     buttonRestart.addEventListener("click", function () {
-        // fetch("/restart")
-        //     .then()
-        //     .catch(error => console.error("Error: " + error));
         buttonRestart.style.visibility = "hidden";
         intervalId = null;
         initialization().then(() => {
