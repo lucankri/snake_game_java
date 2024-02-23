@@ -6,25 +6,289 @@
     <meta http-equiv="content-type" content="no-cache, no-store, must-revalidate">
     <title>Snake Game</title>
     <link rel="icon" href="../web/images/snake2.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="../web/styles.css?v=<%= System.currentTimeMillis() %">
+    <link rel="stylesheet" href="../web/styles.css">
 <!--    ?v=<%= System.currentTimeMillis() %-->
 </head>
 <body>
+    <div id="logotype" class="logo">
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+
+
+        <div class="content">
+            <div class="css">ZMAKE</div>
+            <div class="css">ZMAKE</div>
+            <div class="css">ZMAKE</div>
+            <div class="css">ZMAKE</div>
+            <div class="css">ZMAKE</div>
+            <div class="css">ZMAKE</div>
+            <div class="css">ZMAKE</div>
+            <div class="css">ZMAKE</div>
+            <div class="css">ZMAKE</div>
+            <div class="css">ZMAKE</div>
+        </div>
+    </div>
+    <div id="containerMenu">
+        <ul id="menu-button-set-1">
+            <li class="li-button"><button class="button" id="single-user-button">Одиночный режим</button></li>
+            <li class="li-button"><button class="button" id="multi-user-button">Многопользовательский режим</button></li>
+        </ul>
+        <ul id="menu-button-set-2">
+            <li class="li-button"><button class="button" id="create-room-button">Создать комнату</button></li>
+            <li class="li-button"><button class="button" id="enter-room-button">Войти в комнату</button></li>
+        </ul>
+        <div id="form-snake-room" class="form">
+            <div class="input-container-snake">
+                <input id="snake-name" class="input" type="text" placeholder=" " />
+                <div class="cut"></div>
+                <label for="snake-name" class="placeholder">Имя змейки</label>
+            </div>
+            <div class="input-container-room">
+                <input id="room-name" class="input" type="text" placeholder=" " />
+                <div class="cut"></div>
+                <label for="room-name" class="placeholder">Имя комнаты</label>
+            </div>
+            <button id="button-perform" class="button">Выполнить</button>
+        </div>
+    </div>
     <div id="containerGame">
-        <nav class="dws_menu">
-            <ul id="menu">
-                <li><a>Скорость</a>
+        <nav id="settings-menu">
+            <ul id="menuGame">
+                <li><a>Сложность</a>
                     <ul>
-                        <li><a href="/lvl-slow">Медленная</a></li>
-                        <li><a href="/lvl-average">Средняя</a></li>
-                        <li><a href="/lvl-fast">Быстрая</a></li>
+                        <li><a href="/lvl-slow">Легкий</a></li>
+                        <li><a href="/lvl-average">Средний</a></li>
+                        <li><a href="/lvl-fast">Сложный</a></li>
                     </ul>
                 </li>
                 <li><a>Размер</a>
                     <ul>
-                        <li><a href="/board-little">Маленький</a></li>
-                        <li><a href="/board-average">Средний</a></li>
-                        <li><a href="/board-big">Большой</a></li>
+                        <li><a href="/board-little">Поле 15х10</a></li>
+                        <li><a href="/board-average">Поле 30х20</a></li>
+                        <li><a href="/board-big">Поле 60х40</a></li>
                     </ul>
                 </li>
                 <li><a>Еда</a>
@@ -34,11 +298,13 @@
                         <li><a href="/foods-6">6</a></li>
                     </ul>
                 </li>
+                <li><a href="/exit">Выход</a>
+                </li>
             </ul>
         </nav>
         <div id="score">Очки: 0</div>
         <canvas id="gameCanvas" th:width="600" th:height="400"></canvas>
-        <button id="restart">Начать заново</button>
+        <button class="button" id="restart">Начать заново</button>
     </div>
     <div id="mobile-message">Игра не поддерживается на сенсорных устройствах!</div>
     <script src="../web/script.js?v=<%= System.currentTimeMillis() %"></script>

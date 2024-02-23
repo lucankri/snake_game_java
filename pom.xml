@@ -6,7 +6,7 @@
 
     <groupId>edu.lucankri</groupId>
     <artifactId>gamesnake</artifactId>
-    <version>1.0.0</version>
+    <version>2.2.8</version>
 
     <properties>
         <maven.compiler.source>8</maven.compiler.source>
@@ -22,6 +22,14 @@
     </parent>
 
     <dependencies>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-websocket</artifactId>
+            <version>5.3.16</version>
+        </dependency>
+
+
+
         <dependency>
             <groupId>jakarta.servlet</groupId>
             <artifactId>jakarta.servlet-api</artifactId>
