@@ -1,9 +1,9 @@
-const socket = new WebSocket("ws://localhost:8080/game-ws");
 const scoreElement = document.getElementById("score");
 const canvas = document.getElementById("gameCanvas");
 const boardContext = canvas.getContext("2d");
 const gradientBoard = boardContext.createLinearGradient(0, 0, canvas.width, canvas.height);
 const logo = document.getElementById("logotype");
+const textError = document.getElementById("text-error");
 const containerGame = document.getElementById("containerGame");
 const settingsMenu = document.getElementById("settings-menu");
 const menuGame = document.getElementById("menuGame");
@@ -26,18 +26,109 @@ const colorFoods = "greenyellow";
 let roomId, nameSnake = null;
 let message;
 
-function mainScreen() {
-    logo.style.display = "grid"
-    buttonMenuSet1.style.visibility = "visible";
-    buttonMenuSet2.style.visibility = "hidden";
-    containerGame.style.visibility = "hidden";
-    settingsMenu.style.display = "none";
+function mainScreen(logotype, set1, set2, game, form, restart) {
+    logotype === true ? logo.style.display = "grid" : logo.style.display = "none";
+    set1 === true ? buttonMenuSet1.style.visibility = "visible" : buttonMenuSet1.style.visibility = "hidden";
+    set2 === true ? buttonMenuSet2.style.visibility = "visible" : buttonMenuSet2.style.visibility = "hidden";
+    game === true ? containerGame.style.visibility = "visible" : containerGame.style.visibility = "hidden";
+    form === true ? formSnakeRoom.style.visibility = "visible" : formSnakeRoom.style.visibility = "hidden";
+    restart === true ? buttonRestart.style.visibility = "visible" : buttonRestart.style.visibility = "hidden";
 }
 
 document.addEventListener("DOMContentLoaded", function () {
-    let boardWidth = 30, boardHeight = 20, amountFood = 1, lvl = 500;
+    let boardWidth = 30, boardHeight = 20, amountFood = 1, lvl = 150;
+    let isGameOverProcessing = true;
     let cellWidth, cellHeight, cellMin, radius;
     let mySnake, enemiesSnakes, food;
+    let socket;
+    setTimeout(function () {
+        socket = new WebSocket("ws://localhost:8080/game-ws");
+
+        // Обработчик события при открытии соккета
+        socket.onopen = function(event) {
+            console.log("WebSocket соединение установлено");
+            mainScreen(true, true, false, false, false, false);
+            setTextError("");
+            settingsMenu.style.display = "none";
+        };
+
+        // Обработчик события при получении сообщения от сервера
+        socket.onmessage = function(event) {
+            // console.log("Получено сообщение от сервера:", event.data);
+            let data = JSON.parse(event.data);
+            if (data.type === "start-room") {
+                roomId = data.roomId;
+                boardWidth = data.roomWidth;
+                boardHeight = data.roomHeight;
+                calculateCell();
+                mainScreen(false, false, false, true, false, false);
+                setTextError("");
+                console.log("width=" + boardWidth + " height=" + boardHeight);
+                if (data.creator === true) {
+                    settingsMenu.style.display = "inline-block";
+                }
+            } else if (data.type === "event") {
+                mySnake = data.mySnake;
+                enemiesSnakes = data.snakes;
+                food = data.food;
+                drawBoard();
+                isGameOverProcessing = true;
+            } else if (data.type === "game-over") {
+                if (isGameOverProcessing) {
+                    mainScreen(false, false, false, true, false, true);
+                    isGameOverProcessing = false;
+                }
+            } else if (data.type === "error") {
+                mainScreen(true, false, false, false, true, false);
+                setTextError(data.messageError);
+                console.error(data);
+            }
+
+            // Обработчик события закрытия соединения
+            socket.onclose = function(event) {
+                console.log("WebSocket соединение закрыто");
+                setTextError(event.reason);
+                mainScreen(false, false, false, false, false, false);
+            };
+
+            // Обработчик события ошибки
+            socket.onerror = function(error) {
+                console.error("Произошла ошибка WebSocket:", error);
+            };
+
+        };
+    }, 1000);
+
+
+    // let flagStart = true;
+    // let lastRenderTime = 0; // Переменная для отслеживания времени последней перерисовки
+    //
+    // // Функция для обновления игрового состояния и отрисовки на каждом кадре
+    // function gameLoop() {
+    //     const currentTime = Date.now();
+    //     const secondsSinceLastRender = (currentTime - lastRenderTime) / 1000; // Вычисляем время, прошедшее с последней перерисовки в секундах
+    //     window.requestAnimationFrame(gameLoop); // Запускаем следующий кадр анимации
+    //
+    //     if (secondsSinceLastRender < 1 / lvl) {
+    //         return; // Пропускаем обновление, если прошло недостаточно времени с последней перерисовки
+    //     }
+    //
+    //     lastRenderTime = currentTime; // Обновляем время последней перерисовки
+    //
+    //     drawBoard(); // Отрисовываем игру
+    // }
+    //
+    // // Начинаем игровой цикл после загрузки контента
+    // window.requestAnimationFrame(gameLoop);
+
+
+
+
+
+
+
+
+
 
     gradientBoard.addColorStop(0, "#0d163f");
     gradientBoard.addColorStop(1, "#00020a");
@@ -49,14 +140,7 @@ document.addEventListener("DOMContentLoaded", function () {
         radius = cellMin / 2;
     }
 
-    // Обработчик события при открытии соккета
-    socket.onopen = function(event) {
-        console.log("WebSocket соединение установлено");
-        mainScreen();
-    };
-
     buttonSingleUser.addEventListener("click", function () {
-        buttonMenuSet1.style.visibility = "hidden";
         message = {
             type: "create-room",
             roomWidth: boardWidth,
@@ -66,27 +150,23 @@ document.addEventListener("DOMContentLoaded", function () {
             roomId: null
         }
         socket.send(JSON.stringify(message));
-        containerGame.style.visibility = "visible";
-        settingsMenu.style.display = "inline-block";
+        mainScreen(false, false, false, true, false, false);
     });
 
     buttonMultiUser.addEventListener("click", function () {
-        buttonMenuSet1.style.visibility = "hidden";
-        buttonMenuSet2.style.visibility = "visible"
+        mainScreen(true, false, true, false, false, false);
     });
 
     // Обработчик события при нажатии на кнопку CreateRoom
     function createRoomOnClick() {
-        buttonMenuSet2.style.visibility = "hidden";
-        formSnakeRoom.style.visibility = "visible";
+        mainScreen(true, false, false, false, true, false);
         buttonPerform.removeEventListener("click", enterRoomHandler);
         buttonPerform.addEventListener("click", createRoomHandler);
     }
 
 // Обработчик события при нажатии на кнопку EnterRoom
     function enterRoomOnClick() {
-        buttonMenuSet2.style.visibility = "hidden";
-        formSnakeRoom.style.visibility = "visible";
+        mainScreen(true, false, false, false, true, false);
         buttonPerform.removeEventListener("click", createRoomHandler);
         buttonPerform.addEventListener("click", enterRoomHandler);
     }
@@ -102,9 +182,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 roomId: roomId
             }
             socket.send(JSON.stringify(message));
-            formSnakeRoom.style.visibility = "hidden";
-            containerGame.style.visibility = "visible";
-            settingsMenu.style.display = "inline-block";
+            // mainScreen(false, false, false, true, false, false);
         }
     }
 
@@ -119,51 +197,11 @@ document.addEventListener("DOMContentLoaded", function () {
                 roomId: roomId
             }
             socket.send(JSON.stringify(message));
-            formSnakeRoom.style.visibility = "hidden";
-            containerGame.style.visibility = "visible";
+            // mainScreen(false, false, false, true, false, false);
         }
     }
     buttonCreateRoom.addEventListener("click", createRoomOnClick);
     buttonEnterRoom.addEventListener("click", enterRoomOnClick);
-
-    let isMessageProcessing = true;
-// Обработчик события при получении сообщения от сервера
-    socket.onmessage = function(event) {
-        if (!isMessageProcessing) {
-            return;
-        }
-        console.log("Получено сообщение от сервера:", event.data);
-        let data = JSON.parse(event.data);
-        if (data.type === "room-id") {
-            roomId = data.roomId;
-            calculateCell();
-        } else if (data.type === "event") {
-            mySnake = data.mySnake;
-            enemiesSnakes = data.snakes;
-            food = data.food;
-            drawBoard();
-        } else if (data.type === "game-over") {
-            isMessageProcessing = false;
-            buttonRestart.style.visibility = "visible";
-        } else if (data.type === "error") {
-            console.error(data);
-        }
-
-
-        // Добавьте здесь обработку полученных данных от сервера
-
-    };
-
-// Обработчик события закрытия соединения
-    socket.onclose = function(event) {
-        console.log("WebSocket соединение закрыто");
-    };
-
-// Обработчик события ошибки
-    socket.onerror = function(error) {
-        console.error("Произошла ошибка WebSocket:", error);
-    };
-
 
     function drawBoard() {
         boardContext.clearRect(0, 0, canvas.width, canvas.height);
@@ -174,7 +212,7 @@ document.addEventListener("DOMContentLoaded", function () {
             drawSnake(enemiesSnakes[i], colorEnemiesSnakes);
         }
         drawFood();
-        // updateScore(mySnake.score, nameSnake);
+        updateScore(mySnake.score);
     }
 
     function drawSnake(snake, color) {
@@ -208,7 +246,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 eyeY1 = yPx + cellHeight / 4 * 3;
                 eyeY2 = yPx + cellHeight / 4;
             }
-            console.log(xPx, yPx, cellWidth, cellHeight, radiusTL, radiusTR, radiusBR, radiusBL, color);
             drawRoundedSquare(xPx, yPx, cellWidth, cellHeight, radiusTL, radiusTR, radiusBR, radiusBL, color);
             eyeRendering(cellMin / 5, eyeX1, eyeY1, eyeX2, eyeY2, "#000");
             boardContext.fillStyle = color;
@@ -232,40 +269,59 @@ document.addEventListener("DOMContentLoaded", function () {
     document.addEventListener("keydown", function(event) {
         if (document.activeElement.tagName !== "INPUT") {
             event.preventDefault();
-        }
-        let direction;
-        switch(event.key) {
-            case "ArrowUp":
-                direction = "UP";
-                break;
-            case "ArrowDown":
-                direction = "DOWN";
-                break;
-            case "ArrowLeft":
-                direction = "LEFT";
-                break;
-            case "ArrowRight":
-                direction = "RIGHT";
-                break;
-        }
-        message = {
-            type: "snake-dir-change",
-            direction: direction
-        }
-        if (message.type === "snake-dir-change") {
-            socket.send(JSON.stringify(message));
-            console.log(JSON.stringify(message));
+            message = {
+                type: "",
+                direction: ""
+            }
+            switch(event.key) {
+                case "ArrowUp":
+                    message.type = "snake-dir-change";
+                    message.direction = "UP";
+                    break;
+                case "ArrowDown":
+                    message.type = "snake-dir-change";
+                    message.direction = "DOWN";
+                    break;
+                case "ArrowLeft":
+                    message.type = "snake-dir-change";
+                    message.direction = "LEFT";
+                    break;
+                case "ArrowRight":
+                    message.type = "snake-dir-change";
+                    message.direction = "RIGHT";
+                    break;
+                case "Escape":
+                    message.type = "exit-room";
+                    mainScreen(true, true, false, false, false, false);
+                    settingsMenu.style.display = "none";
+                    setTextError("");
+                    nameSnake = null;
+                    roomId = null;
+                    break;
+                case " ":
+                    let buttonRestartStyle = window.getComputedStyle(buttonRestart).getPropertyValue("visibility");
+                    if (buttonRestartStyle === "visible") {
+                        buttonRestart.click();
+                    }
+                    break;
+            }
+            if (message.type === "snake-dir-change" || message.type === "exit-room") {
+                socket.send(JSON.stringify(message));
+                console.log(JSON.stringify(message));
+            }
+        } else {
+            if (event.key === "Enter") {
+                buttonPerform.click();
+            }
         }
     });
 
     buttonRestart.addEventListener("click", function () {
-        buttonRestart.style.visibility = "hidden";
+        mainScreen(false, false, false, true, false, false);
         message = {
-            type: "restart-room",
-            roomId: roomId
+            type: "restart-snake",
         }
         socket.send(JSON.stringify(message));
-        isMessageProcessing = true;
     });
 
     menuGame.addEventListener('click', function(event) {
@@ -305,154 +361,19 @@ document.addEventListener("DOMContentLoaded", function () {
                     amountFood = 6;
                     break;
             }
-            if (linkText === "/exit") {
-                message = {
-                    type: "exit-room"
-                }
-                settingsMenu.style.display = "none";
-                containerGame.style.visibility = "hidden";
-                buttonMenuSet1.style.visibility = "visible"
-                buttonRestart.style.visibility = "hidden";
-            } else {
-                message = {
-                    type: "resize-room",
-                    roomId: roomId,
-                    roomWidth: boardWidth,
-                    roomHeight: boardHeight,
-                    amountFood: amountFood,
-                    interval: lvl
-                }
-                calculateCell();
+            message = {
+                type: "resize-room",
+                roomId: roomId,
+                roomWidth: boardWidth,
+                roomHeight: boardHeight,
+                amountFood: amountFood,
+                interval: lvl
             }
+            calculateCell();
             socket.send(JSON.stringify(message));
             console.log(JSON.stringify(message));
         }
     }, false);
-
-
-
-    // let previousDirection;
-    // let currentDirection;
-    // let snakeCoordinate;
-    // let foodCoordinate;
-
-    // document.addEventListener("keydown", function(event) {
-    //     event.preventDefault();
-    //     switch(event.key) {
-    //         case "ArrowUp":
-    //             currentDirection = "UP";
-    //             break;
-    //         case "ArrowDown":
-    //             currentDirection = "DOWN";
-    //             break;
-    //         case "ArrowLeft":
-    //             currentDirection = "LEFT";
-    //             break;
-    //         case "ArrowRight":
-    //             currentDirection = "RIGHT";
-    //             break;
-    //     }
-    // });
-
-    // function fetchBoardStart() {
-    //     if (intervalId === null) {
-    //         intervalId = setInterval(fetchBoard, lvl);
-    //     }
-    // }
-    //
-    // function fetchBoardStop() {
-    //     if (intervalId !== null) {
-    //         clearInterval(intervalId);
-    //         intervalId = null;
-    //     }
-    // }
-    //
-    //
-    // function initialization() {
-    //     return fetch(`/initialization?width=${boardWidth}&height=${boardHeight}&sizeFoods=${sizeFoods}`)
-    //         .then(response => {
-    //             if (!response.ok) {
-    //                 throw new Error(`Ошибка HTTP: ${response.status}`);
-    //             }
-    //             cellWidth = canvas.width / boardWidth;
-    //             cellHeight = canvas.height / boardHeight;
-    //             previousDirection = "";
-    //             currentDirection = "GAME_START";
-    //     }).catch(error => {
-    //             window.location.href = "/";
-    //             console.error("Error ", error)
-    //     });
-    // }
-    //
-    //
-
-
-    // function drawBoard() {
-    //     boardContext.clearRect(0, 0, canvas.width, canvas.height);
-    //     boardContext.fillStyle = gradientBoard;
-    //     boardContext.fillRect(0, 0, canvas.width, canvas.height);
-    //     drawSnake();
-    //     drawFood();
-    // }
-
-    // function fetchBoard() {
-    //     return fetch('/game-move-data', {
-    //         method: 'POST',
-    //         body: new URLSearchParams({
-    //             direction: currentDirection
-    //         })
-    //     })
-    //     .then(response => {
-    //         if (!response.ok) {
-    //             throw new Error("Ошибка при получении данных игры");
-    //         }
-    //         return response.json();
-    //     })
-    //     .then(data => {
-    //         snakeCoordinate = data.snakeCoordinates;
-    //         foodCoordinate = data.foodCoordinates;
-    //         previousDirection = data.direction;
-    //         if (data.move === false) {
-    //             fetchBoardStop();
-    //             intervalId = "0";
-    //             buttonRestart.style.visibility = "visible";
-    //         }
-    //         updateScore(data.score);
-    //         drawBoard();
-    //     })
-    //     .catch(error => {
-    //         fetchBoardStop();
-    //         initialization();
-    //     });
-    // }
-    //
-    // buttonRestart.addEventListener("click", function () {
-    //     buttonRestart.style.visibility = "hidden";
-    //     intervalId = null;
-    //     initialization().then(() => {
-    //         fetchBoard().then(() => {
-    //             checkingPageUpdate(previousDirection, intervalId);
-    //         });
-    //     });
-    // });
-    // initialization().then(() => {
-    //     fetchBoard().then(() => {
-    //         checkingPageUpdate(previousDirection, intervalId);
-    //     });
-    // });
-
-    // message = {
-    //     type: "room-create",
-    //     roomWidth: 30,
-    //     roomHeight: 20,
-    //     foodAmount: 3,
-    //     interval: 2000
-    // };
-    // socket.send(JSON.stringify(message));
-
-// Обработчик события открытия соединения
-
-
 });
 
 const backgroundColorInput = window.getComputedStyle(inputSnakeName).backgroundColor;
@@ -477,7 +398,7 @@ function checkInputEmpty() {
     return false;
 }
 
-function updateScore(score, nameSnake) {
+function updateScore(score) {
     let text;
     if (nameSnake == null) {
          text = "Очки: " + score;
@@ -487,11 +408,8 @@ function updateScore(score, nameSnake) {
     scoreElement.textContent = text;
 }
 
-function checkingPageUpdate(direction) {
-    if (direction !== "GAME_START") {
-        buttonRestart.style.visibility = "visible";
-        intervalId = "0";
-    }
+function setTextError(text) {
+    textError.textContent = text;
 }
 
 function drawRoundedSquare(x, y, width, height, radiusTL, radiusTR, radiusBR, radiusBL, color) {

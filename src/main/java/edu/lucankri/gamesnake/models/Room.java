@@ -17,4 +17,6 @@ public interface Room {
     Food getFood();
 
     void stopFrameRater();
+    int getWidth();
+    int getHeight();
 }

@@ -6,6 +6,7 @@ import org.springframework.web.socket.WebSocketSession;
 
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedDeque;
 
 public interface Repository {
     void clientAdded(WebSocketSession session);
@@ -13,10 +14,11 @@ public interface Repository {
     void bind(WebSocketSession session, Room room, Snake snake);
     Room findRoom(String roomId);
     Room findRoom(WebSocketSession session);
-    Room createRoom(int width, int height, int foodAmount, int frameIntervalMs, String nameRoom);
+    Room createRoom(WebSocketSession session, int width, int height, int foodAmount, int frameIntervalMs, String nameRoom);
     Snake findSnake(WebSocketSession session);
+    Boolean getCreator(WebSocketSession session);
 
     void exitRoom(WebSocketSession session);
 
-    List<WebSocketSession> getRoomMembers(String roomId);
+    ConcurrentLinkedDeque<WebSocketSession> getRoomMembers(String roomId);
 }

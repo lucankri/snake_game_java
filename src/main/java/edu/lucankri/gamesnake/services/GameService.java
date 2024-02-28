@@ -25,6 +25,7 @@ public interface GameService {
         public Integer roomHeight;
         public Integer amountFood;
         public Integer interval;
+
         /**
          * "L", "R", "U", "D"
          */
@@ -39,38 +40,14 @@ public interface GameService {
          * "error" - возвращаем ошибку
          */
         public String type;
+        public Boolean creator;
         public String roomId;
         public Snake mySnake;
         public List<Snake> snakes;
         public Food food;
         public String messageError;
+        public Integer roomWidth;
+        public Integer roomHeight;
+        public Integer amountFood;
     }
-
-
-    /**
-     {
-        "type": "abc",
-        "roomId": "341rf",
-        "snakes": [
-             {
-               "points": [
-                    {1, 2},
-                    {1, 3},
-                    {3, 0}
-                ],
-                "score": 10
-             },
-             {
-                ...
-             }
-        ],
-         "food": [
-            {10, 4},
-            {2, 2}
-         ]
-     }
-
-
-     */
-
 }

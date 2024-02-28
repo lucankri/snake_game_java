@@ -9,9 +9,4 @@ public class GameController {
     public String startIndex() {
         return "index";
     }
-
-    @GetMapping("/version")
-    public String getVersion() {
-        return getClass().getPackage().getImplementationVersion();
-    }
 }

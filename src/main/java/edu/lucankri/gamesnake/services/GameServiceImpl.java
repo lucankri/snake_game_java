@@ -1,6 +1,5 @@
 package edu.lucankri.gamesnake.services;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.web.socket.CloseStatus;
@@ -13,8 +12,8 @@ import edu.lucankri.gamesnake.repositorys.RepositoryMapImpl;
 import edu.lucankri.gamesnake.models.Snake;
 import edu.lucankri.gamesnake.models.Room;
 
-import java.util.List;
 import java.util.LinkedList;
+import java.util.concurrent.ConcurrentLinkedDeque;
 
 
 public class GameServiceImpl extends TextWebSocketHandler implements GameService {
@@ -26,7 +25,7 @@ public class GameServiceImpl extends TextWebSocketHandler implements GameService
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
         super.afterConnectionEstablished(session);
         repository.clientAdded(session);
-        System.out.println("Подключился игрок id=" + session.getId());
+        System.out.println("///Подключился игрок id=" + session.getId());
     }
 
     @Override
@@ -37,7 +36,8 @@ public class GameServiceImpl extends TextWebSocketHandler implements GameService
             room.deleteSnake(repository.findSnake(session));
         }
         repository.clientRemoved(session);
-        System.out.println("Отключился игрок id=" + session.getId() + "статус=" + status);
+        sendStartMessageRoom(room);
+        System.out.println("///Отключился игрок id=" + session.getId());
     }
 
     @Override
@@ -47,45 +47,46 @@ public class GameServiceImpl extends TextWebSocketHandler implements GameService
         try {
             messageIn = new ObjectMapper().readValue(message.getPayload(), MessageIn.class);
         } catch (JsonMappingException e) {
-            MessageOut messageOut = new MessageOut();
-            messageOut.type = "error";
-            messageOut.messageError = e.getMessage();
-            sendMessage(session, messageOut);
+            prepareError(session, e.getMessage());
             return;
         }
         if (messageIn != null && messageIn.type != null) {
-            if ("create-room".equals(messageIn.type) || "join-room".equals(messageIn.type)) {
-                createOrJoinProcessing(session, messageIn);
-            } else if ("snake-dir-change".equals(messageIn.type)) {
-                Snake snake = repository.findSnake(session);
-                if (snake != null) {
-                    snake.setDirection(messageIn.direction);
+            switch (messageIn.type) {
+                case "create-room":
+                case "join-room":
+                case "resize-room":
+                    createOrJoinOrResizeProcessing(session, messageIn);
+                    break;
+                case "snake-dir-change":
+                    Snake snake = repository.findSnake(session);
+                    if (snake != null) {
+                        snake.setDirection(messageIn.direction);
+                    }
+                    break;
+                case "restart-snake": {
+                    Room room = repository.findRoom(session);
+                    if (room != null) {
+                        room.restartSnake(repository.findSnake(session));
+                    }
+                    break;
                 }
-            } else if ("restart-room".equals(messageIn.type)) {
-                Room room = repository.findRoom(session);
-                room.restartSnake(repository.findSnake(session));
-            } else if ("resize-room".equals(messageIn.type)) {
-                Room room = repository.findRoom(session);
-                room.resize(messageIn.roomWidth, messageIn.roomHeight, messageIn.amountFood, messageIn.interval);
-            } else if ("exit-room".equals(messageIn.type)) {
-                System.out.println("///Пытаемся выйти!!!");
-                Room room = repository.findRoom(session);
-                if (room != null) {
-                    room.deleteSnake(repository.findSnake(session));
-                    repository.exitRoom(session);
+                case "exit-room": {
+                    Room room = repository.findRoom(session);
+                    if (room != null) {
+                        room.deleteSnake(repository.findSnake(session));
+                        repository.exitRoom(session);
+                        sendStartMessageRoom(room);
+                    }
+                    break;
                 }
             }
         } else {
-            MessageOut messageOut = new MessageOut();
-            messageOut.type = "error";
-            messageOut.messageError = "The message or message type is null";
-            sendMessage(session, messageOut);
+            prepareError(session, "The message or message type is null");
         }
 
     }
 
-    private void createOrJoinProcessing(WebSocketSession session, MessageIn messageIn) {
-        MessageOut messageOut = new MessageOut();
+    private void createOrJoinOrResizeProcessing(WebSocketSession session, MessageIn messageIn) {
         Room room = null;
         if ("create-room".equals(messageIn.type) || "resize-room".equals(messageIn.type)) {
             if (messageIn.roomWidth != null && messageIn.roomHeight != null
@@ -93,14 +94,13 @@ public class GameServiceImpl extends TextWebSocketHandler implements GameService
                 if ("create-room".equals(messageIn.type)) {
                     room = repository.findRoom(messageIn.roomId);
                     if (room == null) {
-                        room = repository.createRoom(messageIn.roomWidth, messageIn.roomHeight,
+                        room = repository.createRoom(session, messageIn.roomWidth, messageIn.roomHeight,
                                 messageIn.amountFood, messageIn.interval, messageIn.roomId);
                         Room finalRoom = room;
                         room.setFrameAction(() -> prepareDataCoordinateRoomClients(finalRoom));
+                        System.out.println("///Игрок= " + session.getId() + " создал комнату id=" + room.getId());
                     } else {
-                        messageOut.type = "error";
-                        messageOut.messageError = "There is a room with that name!";
-                        sendMessage(session, messageOut);
+                        prepareError(session, "There is a room with that name!");
                         room = null;
                     }
                 } else {
@@ -108,48 +108,56 @@ public class GameServiceImpl extends TextWebSocketHandler implements GameService
                     if (room != null) {
                         room.resize(messageIn.roomWidth, messageIn.roomHeight, messageIn.amountFood, messageIn.interval);
                     } else {
-                        messageOut.type = "error";
-                        messageOut.messageError = "You are not in the room!";
-                        sendMessage(session, messageOut);
+                        prepareError(session, "You are not in the room!");
                     }
                 }
             } else {
-                messageOut.type = "error";
-                messageOut.messageError = "There is not enough data, I need: roomWidth," +
-                        "roomHeight, amountFood, interval, roomId";
-                sendMessage(session, messageOut);
+                prepareError(session, "There is not enough data, I need: roomWidth," +
+                        "roomHeight, amountFood, interval, roomId");
             }
         } else if ("join-room".equals(messageIn.type)) {
             if (messageIn.roomId != null) {
                 room = repository.findRoom(messageIn.roomId);
                 if (room == null) {
-                    messageOut.type = "error";
-                    messageOut.messageError = "The room was not found!";
-                    sendMessage(session, messageOut);
+                    prepareError(session, "The room was not found!");
                 }
             } else {
-                messageOut.type = "error";
-                messageOut.messageError = "There is not enough data, I need: roomId";
-                sendMessage(session, messageOut);
+                prepareError(session, "There is not enough data, I need: roomId");
             }
         }
-        if (room != null && !"resize-room".equals(messageIn.type)) {
-            Snake snake = room.addSnakeRoom();
-            messageOut.type = "room-id";
-            messageOut.roomId = room.getId();
-            sendMessage(session, messageOut);
-            repository.bind(session, room, snake);
-            System.out.println("///Вошли в комнату!");
+        if (room != null) {
+            if (!"resize-room".equals(messageIn.type)) {
+                repository.bind(session, room, room.addSnakeRoom());
+                System.out.println("///Игрок= " + session.getId() + " присоединился к комнате id=" + room.getId());
+            }
+            sendStartMessageRoom(room);
+        }
+    }
+
+    private void sendStartMessageRoom(Room room) {
+        if (room != null) {
+            ConcurrentLinkedDeque<WebSocketSession> sessions = repository.getRoomMembers(room.getId());
+            if (sessions != null) {
+                MessageOut message = new MessageOut();
+                message.type = "start-room";
+                message.roomId = room.getId();
+                message.roomWidth = room.getWidth();
+                message.roomHeight = room.getHeight();
+                message.amountFood = room.getFood().getFoodPoints().size();
+                for (WebSocketSession session : sessions) {
+                    message.creator = repository.getCreator(session);
+                    sendMessage(session, message);
+                }
+            }
         }
     }
 
     private void prepareDataCoordinateRoomClients(Room room) {
-//        System.out.println("Отправляем данные!!!");
-        List<WebSocketSession> sockets = repository.getRoomMembers(room.getId());
-        if (sockets != null) {
-            for (WebSocketSession socket : sockets) {
+        ConcurrentLinkedDeque<WebSocketSession> sessions = repository.getRoomMembers(room.getId());
+        if (sessions != null) {
+            for (WebSocketSession session : sessions) {
                 MessageOut message = new MessageOut();
-                Snake snake = repository.findSnake(socket);
+                Snake snake = repository.findSnake(session);
                 if (snake.getSnake().isEmpty()) {
                     message.type = "game-over";
                 } else {
@@ -160,18 +168,23 @@ public class GameServiceImpl extends TextWebSocketHandler implements GameService
                 message.mySnake = snake;
                 message.food = room.getFood();
 
-                sendMessage(socket, message);
+                sendMessage(session, message);
             }
-        } else {
-            System.out.println("Некому отправить сообщение!!!");
         }
     }
 
-    private void sendMessage(WebSocketSession session, Object object) {
+    private void prepareError(WebSocketSession session, String error) {
+        MessageOut message = new MessageOut();
+        message.type = "error";
+        message.messageError = error;
+        sendMessage(session, message);
+    }
+
+    private synchronized void sendMessage(WebSocketSession session, Object object) {
         try {
             session.sendMessage(new TextMessage(mapper.writeValueAsString(object)));
         } catch (Exception e) {
-            e.getMessage();
+            System.err.println(e.getMessage());
         }
     }
 }

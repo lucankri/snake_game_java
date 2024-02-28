@@ -35,7 +35,7 @@ public class Snake {
     }
 
     public void placeRoom(Point freeCell) {
-        if (snake.isEmpty()) {
+        if (snake.isEmpty() && freeCell != null) {
             directionCurrent = Direction.GAME_START;
             directionFuture = Direction.GAME_START;
             snake.offerLast(freeCell);

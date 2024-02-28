@@ -18,7 +18,7 @@ public class Utils {
             if (iterator.hasNext()) {
                 iterator.next();
             } else {
-                throw new IndexOutOfBoundsException("Index " + index + " is out of bounds");
+                return null;
             }
         }
 
@@ -27,7 +27,7 @@ public class Utils {
             iterator.remove();
             return removedElement;
         } else {
-            throw new IndexOutOfBoundsException("Index " + index + " is out of bounds");
+            return null;
         }
     }
 }
