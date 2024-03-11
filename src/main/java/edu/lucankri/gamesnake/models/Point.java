@@ -30,6 +30,42 @@ public class Point {
         }
     }
 
+    Point move(String direction, int width, int height) {
+        Point point;
+        switch (direction) {
+            case "UP":
+                if ((y - 1) < 0) {
+                    point = new Point(x, height - 1);
+                } else {
+                    point = new Point(x, y - 1);
+                }
+                return point;
+            case "DOWN":
+                if ((y + 1) == height) {
+                    point = new Point(x, 0);
+                } else {
+                    point = new Point(x, y + 1);
+                }
+                return point;
+            case "LEFT":
+                if ((x - 1) < 0) {
+                    point = new Point(width - 1, y);
+                } else {
+                    point = new Point(x - 1, y);
+                }
+                return point;
+            case "RIGHT":
+                if ((x + 1) == width) {
+                    point = new Point(0, y);
+                } else {
+                    point = new Point(x + 1, y);
+                }
+                return point;
+            default:
+                return new Point(x, y);
+        }
+    }
+
     @Override
     public String toString() {
         return "Point{" +

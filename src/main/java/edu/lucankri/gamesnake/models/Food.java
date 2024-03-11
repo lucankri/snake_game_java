@@ -2,18 +2,16 @@ package edu.lucankri.gamesnake.models;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.util.Deque;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
 public class Food {
     @JsonProperty("points")
     private final ConcurrentLinkedDeque<Point> foodPoints = new ConcurrentLinkedDeque<>();
 
-    public Food(Deque<Point> freeCells) {
-        int sizeFreeCells = freeCells.size();
-        for (int i = 0; i < sizeFreeCells; ++i) {
-            foodPoints.offerLast(freeCells.pollLast());
-        }
+    public Food() {}
+
+    public void addFood(Point freeCell) {
+        foodPoints.offerLast(freeCell);
     }
 
     public boolean isEat(Point head) {
@@ -29,7 +27,19 @@ public class Food {
         }
     }
 
+    public void deleteFoods(Point food) {
+        foodPoints.removeFirstOccurrence(food);
+    }
+
+    public void deleteFoods() {
+        foodPoints.clear();
+    }
+
     public ConcurrentLinkedDeque<Point> getFoodPoints() {
         return foodPoints;
+    }
+
+    public int size() {
+        return foodPoints.size();
     }
 }

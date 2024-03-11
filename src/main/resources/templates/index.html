@@ -7,6 +7,7 @@
     <title>Zmake game</title>
     <link rel="icon" href="../web/images/snake2.svg" type="image/svg+xml">
     <link rel="stylesheet" href="../web/styles.css">
+<!--    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>-->
 <!--    ?v=<%= System.currentTimeMillis() %-->
 </head>
 <body>
@@ -298,6 +299,12 @@
                         <li><a href="/foods-6">6</a></li>
                     </ul>
                 </li>
+                <li><a>Стены</a>
+                    <ul>
+                        <li><a href="/walls-yes">Да</a></li>
+                        <li><a href="/walls-no">Нет</a></li>
+                    </ul>
+                </li>
             </ul>
         </nav>
         <div id="score"></div>
@@ -305,8 +312,9 @@
         <button class="button" id="restart">Начать заново</button>
     </div>
     <div id="text-error"></div>
-    <div class="version">v.2.3.18 28.02.2024</div>
+    <div class="version">v.2.4.18 11.03.2024</div>
     <div id="mobile-message">Игра не поддерживается на сенсорных устройствах!</div>
-    <script src="../web/script.js?v=<%= System.currentTimeMillis() %"></script>
+    <script src="../web/script.js"></script>
+<!--    ?v=<%= System.currentTimeMillis() %-->
 </body>
 </html>

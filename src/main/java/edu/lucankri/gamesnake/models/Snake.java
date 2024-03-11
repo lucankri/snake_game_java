@@ -51,8 +51,25 @@ public class Snake {
         return null;
     }
 
+    public Point peekMove(int width, int height) {
+        if (!snake.isEmpty() && this.directionFuture != Direction.GAME_START) {
+            directionCurrent = directionFuture;
+            return this.snake.peekFirst().move(this.directionFuture.name(), width, height);
+        }
+        return null;
+    }
+
     public void move(boolean grow) {
         snake.offerFirst(this.snake.peekFirst().move(this.directionCurrent.name()));
+        if (grow) {
+            ++score;
+        } else {
+            this.snake.pollLast();
+        }
+    }
+
+    public void move(boolean grow, int width, int height) {
+        snake.offerFirst(this.snake.peekFirst().move(this.directionCurrent.name(), width, height));
         if (grow) {
             ++score;
         } else {

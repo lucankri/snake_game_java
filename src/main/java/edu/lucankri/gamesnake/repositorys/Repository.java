@@ -14,7 +14,7 @@ public interface Repository {
     void bind(WebSocketSession session, Room room, Snake snake);
     Room findRoom(String roomId);
     Room findRoom(WebSocketSession session);
-    Room createRoom(WebSocketSession session, int width, int height, int foodAmount, int frameIntervalMs, String nameRoom);
+    Room createRoom(WebSocketSession session, int width, int height, int foodAmount, int frameIntervalMs, String nameRoom, boolean walls);
     Snake findSnake(WebSocketSession session);
     Boolean getCreator(WebSocketSession session);
 

@@ -193,7 +193,6 @@ html, body {
 }
 
 #gameCanvas {
-    border: 15px solid #0099fd;
     box-sizing: border-box;
     box-shadow: 0 0 100px 1px #0099fd;
     font-size: 0;

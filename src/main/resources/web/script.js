@@ -20,7 +20,7 @@ const inputSnakeName = document.getElementById("snake-name");
 const inputRoomName = document.getElementById("room-name");
 
 const colorMySnake = "#fefefe";
-const colorEnemiesSnakes = "#AA0000"
+const colorEnemiesSnakes = "#FF0000"
 const colorFoods = "greenyellow";
 
 let roomId, nameSnake = null;
@@ -37,9 +37,11 @@ function mainScreen(logotype, set1, set2, game, form, restart) {
 
 document.addEventListener("DOMContentLoaded", function () {
     let boardWidth = 30, boardHeight = 20, amountFood = 1, lvl = 150;
+    let walls = false;
     let isGameOverProcessing = true;
     let cellWidth, cellHeight, cellMin, radius;
-    let mySnake, enemiesSnakes, food;
+    let mySnake = null, enemiesSnakes = null, food;
+    // let previousEnemiesSnakes, previousMySnake;
     let socket;
     setTimeout(function () {
         socket = new WebSocket("ws://localhost:8080/game-ws");
@@ -60,6 +62,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 roomId = data.roomId;
                 boardWidth = data.roomWidth;
                 boardHeight = data.roomHeight;
+                lvl = data.intervalMs;
+                walls = data.walls;
                 calculateCell();
                 mainScreen(false, false, false, true, false, false);
                 setTextError("");
@@ -67,19 +71,27 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (data.creator === true) {
                     settingsMenu.style.display = "inline-block";
                 }
-            } else if (data.type === "event") {
+                if (walls) {
+                    canvas.style.boxShadow = "0 0 20px 15px #AA2200";
+                } else {
+                    canvas.style.boxShadow = "0 0 100px 1px #0099fd";
+                }
+            } else if (data.type === "event" || data.type === "game-over") {
+                // previousEnemiesSnakes = enemiesSnakes;
+                // previousMySnake = mySnake;
+                // animateSnakeState();
+                if (isGameOverProcessing && data.type === "game-over") {
+                    mainScreen(false, false, false, true, false, true);
+                    isGameOverProcessing = false;
+                } else {
+                    isGameOverProcessing = true;
+                }
                 mySnake = data.mySnake;
                 enemiesSnakes = data.snakes;
                 food = data.food;
                 drawBoard();
-                isGameOverProcessing = true;
-            } else if (data.type === "game-over") {
-                if (isGameOverProcessing) {
-                    mainScreen(false, false, false, true, false, true);
-                    isGameOverProcessing = false;
-                }
             } else if (data.type === "error") {
-                mainScreen(true, false, false, false, true, false);
+                mainScreen(true, true, false, false, false, false);
                 setTextError(data.messageError);
                 console.error(data);
             }
@@ -100,34 +112,63 @@ document.addEventListener("DOMContentLoaded", function () {
     }, 1000);
 
 
-    // let flagStart = true;
-    // let lastRenderTime = 0; // Переменная для отслеживания времени последней перерисовки
-    //
-    // // Функция для обновления игрового состояния и отрисовки на каждом кадре
-    // function gameLoop() {
-    //     const currentTime = Date.now();
-    //     const secondsSinceLastRender = (currentTime - lastRenderTime) / 1000; // Вычисляем время, прошедшее с последней перерисовки в секундах
-    //     window.requestAnimationFrame(gameLoop); // Запускаем следующий кадр анимации
-    //
-    //     if (secondsSinceLastRender < 1 / lvl) {
-    //         return; // Пропускаем обновление, если прошло недостаточно времени с последней перерисовки
+
+
+
+    // function animateSnakeState() {
+    //     const duration = lvl / 1000.0; // Продолжительность анимации в секундах
+    //     const interpolationSteps = Math.max(Math.ceil(lvl / 17), 1); // Количество шагов интерполяции
+    //     let step = 0;
+    //     if (previousMySnake !== null && previousEnemiesSnakes !== null) {
+    //         const tween = gsap.to({}, {
+    //             duration: duration,
+    //             repeat: 0,
+    //             paused: true,
+    //             onUpdate: () => {
+    //                 const interpolationFactor = step / interpolationSteps;
+    //                 const interpolatedMySnake = interpolateSnakeState(previousMySnake, mySnake, interpolationFactor);
+    //                 drawBoard();
+    //                 drawSnake(interpolatedMySnake, colorMySnake);
+    //                 for (let i = 0; i < previousEnemiesSnakes.length; ++i) {
+    //                     const interpolatedEnemiesSnakes = interpolateSnakeState(previousEnemiesSnakes[i], enemiesSnakes[i], interpolationFactor);
+    //                     drawSnake(interpolatedEnemiesSnakes, colorEnemiesSnakes);
+    //                 }
+    //                 step++;
+    //             },
+    //             onComplete: () => {
+    //                 // Анимация завершена
+    //             }
+    //         });
+    //         tween.play();
+    //     } else {
+    //         drawBoard();
+    //         drawSnake(mySnake, colorMySnake);
+    //         for (let i = 0; i < enemiesSnakes.length; ++i) {
+    //             drawBoard(enemiesSnakes[i], colorEnemiesSnakes);
+    //         }
     //     }
-    //
-    //     lastRenderTime = currentTime; // Обновляем время последней перерисовки
-    //
-    //     drawBoard(); // Отрисовываем игру
     // }
     //
-    // // Начинаем игровой цикл после загрузки контента
-    // window.requestAnimationFrame(gameLoop);
-
-
-
-
-
-
-
-
+    // function interpolateSnakeState(prevState, currentState, interpolationFactor) {
+    //     const interpolatedPoints = [];
+    //
+    //     // Определяем количество точек для интерполяции
+    //     const numPoints = Math.max(prevState.points.length, currentState.points.length);
+    //
+    //     for (let i = 0; i < numPoints; i++) {
+    //         // Получаем точки из предыдущего и текущего состояний
+    //         const prevPoint = prevState.points[i] || prevState.points[prevState.points.length - 1];
+    //         const currentPoint = currentState.points[i] || currentState.points[currentState.points.length - 1];
+    //
+    //         // Интерполируем координаты точек
+    //         const interpolatedX = prevPoint.x + (currentPoint.x - prevPoint.x) * interpolationFactor;
+    //         const interpolatedY = prevPoint.y + (currentPoint.y - prevPoint.y) * interpolationFactor;
+    //
+    //         interpolatedPoints.push({ x: interpolatedX, y: interpolatedY });
+    //     }
+    //
+    //     return { ...currentState, points: interpolatedPoints };
+    // }
 
 
     gradientBoard.addColorStop(0, "#0d163f");
@@ -147,9 +188,11 @@ document.addEventListener("DOMContentLoaded", function () {
             roomHeight: boardHeight,
             amountFood: amountFood,
             interval: lvl,
+            walls: walls,
             roomId: null
         }
         socket.send(JSON.stringify(message));
+        console.log(JSON.stringify(message));
         mainScreen(false, false, false, true, false, false);
     });
 
@@ -179,10 +222,10 @@ document.addEventListener("DOMContentLoaded", function () {
                 roomHeight: boardHeight,
                 amountFood: amountFood,
                 interval: lvl,
+                walls: walls,
                 roomId: roomId
             }
             socket.send(JSON.stringify(message));
-            // mainScreen(false, false, false, true, false, false);
         }
     }
 
@@ -194,10 +237,10 @@ document.addEventListener("DOMContentLoaded", function () {
                 roomHeight: boardHeight,
                 amountFood: amountFood,
                 interval: lvl,
+                walls: walls,
                 roomId: roomId
             }
             socket.send(JSON.stringify(message));
-            // mainScreen(false, false, false, true, false, false);
         }
     }
     buttonCreateRoom.addEventListener("click", createRoomOnClick);
@@ -207,11 +250,11 @@ document.addEventListener("DOMContentLoaded", function () {
         boardContext.clearRect(0, 0, canvas.width, canvas.height);
         boardContext.fillStyle = gradientBoard;
         boardContext.fillRect(0, 0, canvas.width, canvas.height);
+        drawFood();
         drawSnake(mySnake, colorMySnake);
         for (let i = 0; i < enemiesSnakes.length; ++i) {
             drawSnake(enemiesSnakes[i], colorEnemiesSnakes);
         }
-        drawFood();
         updateScore(mySnake.score);
     }
 
@@ -258,7 +301,6 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function drawFood() {
-        let radius = Math.min(cellWidth, cellHeight) / 2;
         for (let i = 0; i < food.points.length; ++i) {
             let xPx = food.points[i].x * cellWidth;
             let yPx = food.points[i].y * cellHeight;
@@ -331,7 +373,7 @@ document.addEventListener("DOMContentLoaded", function () {
             let linkText = new URL(event.target.href).pathname;
             switch (linkText) {
                 case "/lvl-slow":
-                    lvl = 200;
+                    lvl = 250;
                     break;
                 case "/lvl-average":
                     lvl = 150;
@@ -360,6 +402,12 @@ document.addEventListener("DOMContentLoaded", function () {
                 case "/foods-6":
                     amountFood = 6;
                     break;
+                case "/walls-yes":
+                    walls = true;
+                    break;
+                case "/walls-no":
+                    walls = false;
+                    break;
             }
             message = {
                 type: "resize-room",
@@ -367,7 +415,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 roomWidth: boardWidth,
                 roomHeight: boardHeight,
                 amountFood: amountFood,
-                interval: lvl
+                interval: lvl,
+                walls: walls
             }
             calculateCell();
             socket.send(JSON.stringify(message));

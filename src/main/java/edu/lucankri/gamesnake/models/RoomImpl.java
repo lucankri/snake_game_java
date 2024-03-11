@@ -5,48 +5,58 @@ import java.util.concurrent.*;
 
 public class RoomImpl implements Room {
     private final String id;
+    private int intervalMs;
     private int width;
     private int height;
-    private Food food;
+    private boolean walls;
     private int amountFood;
+    private Food food = new Food();
     private final ConcurrentLinkedDeque<Snake> snakes = new ConcurrentLinkedDeque<>();
     private final ConcurrentLinkedDeque<Point> freeCells = new ConcurrentLinkedDeque<>();
     private ScheduledExecutorService frameRater;
 
-    public RoomImpl(int width, int height, int amountFood, int frameIntervalMs, String roomName) {
+    public RoomImpl(int width, int height, int amountFood, int intervalMs, String roomName, boolean walls) {
         this.id = roomName != null ? roomName : UUID.randomUUID().toString();
         this.width = width;
         this.height = height;
         this.amountFood = amountFood;
+        this.intervalMs = intervalMs;
+        this.walls = walls;
         initRoom();
-        startFrameRater(frameIntervalMs);
+        startFrameRater();
     }
 
     private void initRoom() {
         freeCells.clear();
+        food.deleteFoods();
         createFreeCells();
         placeFood();
     }
 
-    private void startFrameRater(int frameIntervalMs) {
+    private void startFrameRater() {
         frameRater = Executors.newSingleThreadScheduledExecutor();
         frameRater.scheduleAtFixedRate(() -> {
             moveSnakes();
+            placeFood();
             if (frameAction != null) {
                 frameAction.run();
             }
-        }, 0, frameIntervalMs, TimeUnit.MILLISECONDS);
+        }, 0, intervalMs, TimeUnit.MILLISECONDS);
     }
 
     private void placeFood() {
-        Deque<Point> freeCellsFoods = new ArrayDeque<>();
-        for (int i = 0; i < amountFood; ++i) {
-            freeCellsFoods.offerLast(Utils.removeElementAtIndex(freeCells, Utils.rand(freeCells.size())));
+        int amount = amountFood - food.size();
+        for (int i = 0; i < amount; ++i) {
+            if (freeCells.isEmpty()) {
+                createFreeCells();
+            }
+            if (!freeCells.isEmpty()) {
+                food.addFood(Utils.removeElementAtIndex(freeCells, Utils.rand(freeCells.size())));
+            }
         }
-        this.food = new Food(freeCellsFoods);
     }
 
-    private boolean createFreeCells() {
+    private void createFreeCells() {
         Set<Point> occupiedPoints = new HashSet<>();
         for (Snake snake : snakes) {
             occupiedPoints.addAll(snake.getSnake());
@@ -62,7 +72,6 @@ public class RoomImpl implements Room {
                 }
             }
         }
-        return !freeCells.isEmpty();
     }
 
     protected Runnable frameAction;
@@ -72,17 +81,21 @@ public class RoomImpl implements Room {
     }
 
     @Override
-    public void resize(int width, int height, int amountFood, int frameIntervalMs) {
+    public void resize(int width, int height, int amountFood, int intervalMs, boolean walls) {
         stopFrameRater();
         this.width = width;
         this.height = height;
         this.amountFood = amountFood;
-        initRoom();
+        this.intervalMs = intervalMs;
+        this.walls = walls;
         for (Snake snake : snakes) {
             snake.clearPoint();
+        }
+        initRoom();
+        for (Snake snake : snakes) {
             snake.placeRoom(Utils.removeElementAtIndex(freeCells, Utils.rand(freeCells.size())));
         }
-        startFrameRater(frameIntervalMs);
+        startFrameRater();
     }
 
     @Override
@@ -95,7 +108,8 @@ public class RoomImpl implements Room {
         if (freeCells.isEmpty()) {
             createFreeCells();
         }
-        Snake snake = new Snake(Utils.removeElementAtIndex(freeCells, Utils.rand(freeCells.size())));
+        Snake snake = new Snake(freeCells.isEmpty() ? null :
+                Utils.removeElementAtIndex(freeCells, Utils.rand(freeCells.size())));
         snakes.offerLast(snake);
         return snake;
     }
@@ -107,7 +121,8 @@ public class RoomImpl implements Room {
             if (freeCells.isEmpty()) {
                 createFreeCells();
             }
-            snake.placeRoom(Utils.removeElementAtIndex(freeCells, Utils.rand(freeCells.size())));
+            snake.placeRoom(freeCells.isEmpty() ? null :
+                    Utils.removeElementAtIndex(freeCells, Utils.rand(freeCells.size())));
         }
     }
 
@@ -127,14 +142,16 @@ public class RoomImpl implements Room {
     protected void moveSnakes() {
         for (Snake snake : snakes) {
             boolean flagGameOver = false;
-            Point head = snake.peekMove();
+            Point head = walls ? snake.peekMove() : snake.peekMove(width, height);
             if (head != null) {
                 if (freeCells.isEmpty()) {
                     createFreeCells();
                 }
-                if (head.x < 0 || head.x >= width || head.y < 0 || head.y >= height) {
-                    clearPointSnake(snake);
-                    flagGameOver = true;
+                if (walls) {
+                    if (head.x < 0 || head.x >= width || head.y < 0 || head.y >= height) {
+                        clearPointSnake(snake);
+                        flagGameOver = true;
+                    }
                 }
                 if (!flagGameOver) {
                     for (Snake s : snakes) {
@@ -145,12 +162,24 @@ public class RoomImpl implements Room {
                     }
                 }
                 if (!flagGameOver) {
-                    freeCells.removeFirstOccurrence(head);
-                    boolean isEat = food.isEat(head);
-                    if (isEat) {
-                        food.moveFood(Utils.removeElementAtIndex(freeCells, Utils.rand(freeCells.size())), head);
+                    try {
+                        freeCells.removeFirstOccurrence(head);
+                        boolean isEat = food.isEat(head);
+                        if (isEat) {
+                            if (!freeCells.isEmpty()) {
+                                food.moveFood(Utils.removeElementAtIndex(freeCells, Utils.rand(freeCells.size())), head);
+                            } else {
+                                food.deleteFoods(head);
+                            }
+                        }
+                        if (walls) {
+                            snake.move(isEat);
+                        } else {
+                            snake.move(isEat, width, height);
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace(System.out);
                     }
-                    snake.move(isEat);
                 }
             }
         }
@@ -179,6 +208,16 @@ public class RoomImpl implements Room {
     @Override
     public int getHeight() {
         return height;
+    }
+
+    @Override
+    public int getIntervalMs() {
+        return intervalMs;
+    }
+
+    @Override
+    public boolean getWalls() {
+        return walls;
     }
 
     @Override

@@ -90,12 +90,12 @@ public class GameServiceImpl extends TextWebSocketHandler implements GameService
         Room room = null;
         if ("create-room".equals(messageIn.type) || "resize-room".equals(messageIn.type)) {
             if (messageIn.roomWidth != null && messageIn.roomHeight != null
-                    && messageIn.amountFood != null && messageIn.interval != null) {
+                    && messageIn.amountFood != null && messageIn.interval != null && messageIn.walls != null) {
                 if ("create-room".equals(messageIn.type)) {
                     room = repository.findRoom(messageIn.roomId);
                     if (room == null) {
                         room = repository.createRoom(session, messageIn.roomWidth, messageIn.roomHeight,
-                                messageIn.amountFood, messageIn.interval, messageIn.roomId);
+                                messageIn.amountFood, messageIn.interval, messageIn.roomId, messageIn.walls);
                         Room finalRoom = room;
                         room.setFrameAction(() -> prepareDataCoordinateRoomClients(finalRoom));
                         System.out.println("///Игрок= " + session.getId() + " создал комнату id=" + room.getId());
@@ -106,14 +106,14 @@ public class GameServiceImpl extends TextWebSocketHandler implements GameService
                 } else {
                     room = repository.findRoom(session);
                     if (room != null) {
-                        room.resize(messageIn.roomWidth, messageIn.roomHeight, messageIn.amountFood, messageIn.interval);
+                        room.resize(messageIn.roomWidth, messageIn.roomHeight, messageIn.amountFood, messageIn.interval, messageIn.walls);
                     } else {
                         prepareError(session, "You are not in the room!");
                     }
                 }
             } else {
                 prepareError(session, "There is not enough data, I need: roomWidth," +
-                        "roomHeight, amountFood, interval, roomId");
+                        "roomHeight, amountFood, interval, roomId, walls");
             }
         } else if ("join-room".equals(messageIn.type)) {
             if (messageIn.roomId != null) {
@@ -144,6 +144,8 @@ public class GameServiceImpl extends TextWebSocketHandler implements GameService
                 message.roomWidth = room.getWidth();
                 message.roomHeight = room.getHeight();
                 message.amountFood = room.getFood().getFoodPoints().size();
+                message.intervalMs = room.getIntervalMs();
+                message.walls = room.getWalls();
                 for (WebSocketSession session : sessions) {
                     message.creator = repository.getCreator(session);
                     sendMessage(session, message);

@@ -25,6 +25,7 @@ public interface GameService {
         public Integer roomHeight;
         public Integer amountFood;
         public Integer interval;
+        public Boolean walls;
 
         /**
          * "L", "R", "U", "D"
@@ -49,5 +50,7 @@ public interface GameService {
         public Integer roomWidth;
         public Integer roomHeight;
         public Integer amountFood;
+        public Integer intervalMs;
+        public Boolean walls;
     }
 }

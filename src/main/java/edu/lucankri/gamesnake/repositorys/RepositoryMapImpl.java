@@ -91,12 +91,12 @@ public class RepositoryMapImpl implements Repository {
 
     @Override
     public Room createRoom(WebSocketSession session, int width,
-                           int height, int foodAmount, int frameIntervalMs, String nameRoom) {
+                           int height, int foodAmount, int frameIntervalMs, String nameRoom, boolean walls) {
         ClientInfo client = clients.get(session.getId());
         Room room = null;
         if (client != null) {
             client.creator = true;
-            room = new RoomImpl(width, height, foodAmount, frameIntervalMs, nameRoom);
+            room = new RoomImpl(width, height, foodAmount, frameIntervalMs, nameRoom, walls);
             rooms.put(room.getId(), room);
         }
         return room;
