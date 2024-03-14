@@ -165,8 +165,8 @@ public class GameServiceImpl extends TextWebSocketHandler implements GameService
                 } else {
                     message.type = "event";
                 }
-                message.snakes = new LinkedList<>(room.getSnakes());
-                message.snakes.remove(snake);
+                message.enemiesSnakes = new LinkedList<>(room.getSnakes());
+                message.enemiesSnakes.remove(snake);
                 message.mySnake = snake;
                 message.food = room.getFood();
 

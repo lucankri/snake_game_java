@@ -59,21 +59,14 @@ public class Snake {
         return null;
     }
 
-    public void move(boolean grow) {
-        snake.offerFirst(this.snake.peekFirst().move(this.directionCurrent.name()));
-        if (grow) {
-            ++score;
-        } else {
-            this.snake.pollLast();
-        }
-    }
-
-    public void move(boolean grow, int width, int height) {
-        snake.offerFirst(this.snake.peekFirst().move(this.directionCurrent.name(), width, height));
-        if (grow) {
-            ++score;
-        } else {
-            this.snake.pollLast();
+    public void move(Point point, boolean grow) {
+        if (point != null) {
+            snake.offerFirst(point);
+            if (grow) {
+                ++score;
+            } else {
+                this.snake.pollLast();
+            }
         }
     }
 

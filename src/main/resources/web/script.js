@@ -67,7 +67,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 calculateCell();
                 mainScreen(false, false, false, true, false, false);
                 setTextError("");
-                console.log("width=" + boardWidth + " height=" + boardHeight);
+                isGameOverProcessing = true;
                 if (data.creator === true) {
                     settingsMenu.style.display = "inline-block";
                 }
@@ -83,11 +83,12 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (isGameOverProcessing && data.type === "game-over") {
                     mainScreen(false, false, false, true, false, true);
                     isGameOverProcessing = false;
-                } else {
+                } else if (!isGameOverProcessing && data.type !== "game-over") {
+                    mainScreen(false, false, false, true, false, false);
                     isGameOverProcessing = true;
                 }
                 mySnake = data.mySnake;
-                enemiesSnakes = data.snakes;
+                enemiesSnakes = data.enemiesSnakes;
                 food = data.food;
                 drawBoard();
             } else if (data.type === "error") {
@@ -359,7 +360,6 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     buttonRestart.addEventListener("click", function () {
-        mainScreen(false, false, false, true, false, false);
         message = {
             type: "restart-snake",
         }

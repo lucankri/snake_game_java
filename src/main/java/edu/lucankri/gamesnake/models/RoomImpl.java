@@ -147,6 +147,21 @@ public class RoomImpl implements Room {
                 if (freeCells.isEmpty()) {
                     createFreeCells();
                 }
+                try {
+                    freeCells.removeFirstOccurrence(head);
+                    boolean isEat = food.isEat(head);
+                    if (isEat) {
+                        if (!freeCells.isEmpty()) {
+                            food.moveFood(Utils.removeElementAtIndex(freeCells, Utils.rand(freeCells.size())), head);
+                        } else {
+                            food.deleteFoods(head);
+                        }
+                    }
+                    snake.move(head, isEat);
+                } catch (Exception e) {
+                    e.printStackTrace(System.out);
+                }
+
                 if (walls) {
                     if (head.x < 0 || head.x >= width || head.y < 0 || head.y >= height) {
                         clearPointSnake(snake);
@@ -155,35 +170,68 @@ public class RoomImpl implements Room {
                 }
                 if (!flagGameOver) {
                     for (Snake s : snakes) {
-                        if (s.getSnake().contains(head)) {
-                            clearPointSnake(snake);
-                            flagGameOver = true;
-                        }
-                    }
-                }
-                if (!flagGameOver) {
-                    try {
-                        freeCells.removeFirstOccurrence(head);
-                        boolean isEat = food.isEat(head);
-                        if (isEat) {
-                            if (!freeCells.isEmpty()) {
-                                food.moveFood(Utils.removeElementAtIndex(freeCells, Utils.rand(freeCells.size())), head);
-                            } else {
-                                food.deleteFoods(head);
+                        for (Point point : s.getSnake()) {
+                            if (point.equals(head) && point != head) {
+                                clearPointSnake(snake);
+                                flagGameOver = true;
+                                break;
                             }
                         }
-                        if (walls) {
-                            snake.move(isEat);
-                        } else {
-                            snake.move(isEat, width, height);
+                        if (flagGameOver) {
+                            break;
                         }
-                    } catch (Exception e) {
-                        e.printStackTrace(System.out);
                     }
                 }
             }
         }
     }
+
+
+//    protected void moveSnakes() {
+//        for (Snake snake : snakes) {
+//            boolean flagGameOver = false;
+//            Point head = walls ? snake.peekMove() : snake.peekMove(width, height);
+//            if (head != null) {
+//                if (freeCells.isEmpty()) {
+//                    createFreeCells();
+//                }
+//                if (walls) {
+//                    if (head.x < 0 || head.x >= width || head.y < 0 || head.y >= height) {
+//                        clearPointSnake(snake);
+//                        flagGameOver = true;
+//                    }
+//                }
+//                if (!flagGameOver) {
+//                    for (Snake s : snakes) {
+//                        if (s.getSnake().contains(head)) {
+//                            clearPointSnake(snake);
+//                            flagGameOver = true;
+//                        }
+//                    }
+//                }
+//                if (!flagGameOver) {
+//                    try {
+//                        freeCells.removeFirstOccurrence(head);
+//                        boolean isEat = food.isEat(head);
+//                        if (isEat) {
+//                            if (!freeCells.isEmpty()) {
+//                                food.moveFood(Utils.removeElementAtIndex(freeCells, Utils.rand(freeCells.size())), head);
+//                            } else {
+//                                food.deleteFoods(head);
+//                            }
+//                        }
+//                        if (walls) {
+//                            snake.move(isEat);
+//                        } else {
+//                            snake.move(isEat, width, height);
+//                        }
+//                    } catch (Exception e) {
+//                        e.printStackTrace(System.out);
+//                    }
+//                }
+//            }
+//        }
+//    }
 
     @Override
     public ConcurrentLinkedDeque<Snake> getSnakes() {
